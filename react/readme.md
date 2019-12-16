@@ -1,6 +1,6 @@
-## Svelte JsStore Demo
+## React JsStore Demo
 
-This is an example project of using jsstore with svelte framework.
+This is an example project of using jsstore with react framework.
 
 # How to run
 
