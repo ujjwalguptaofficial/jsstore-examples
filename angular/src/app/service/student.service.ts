@@ -52,8 +52,7 @@ export class StudentService extends BaseService {
   }
 
   async clearStudents() {
-    return await this.connection.clear('Students');
+    return await this.connection.clear(this.tableName);
   }
-
 
 }

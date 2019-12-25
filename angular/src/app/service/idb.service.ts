@@ -1,12 +1,13 @@
 import * as JsStore from 'jsstore';
 import { IDataBase, DATA_TYPE, ITable } from 'jsstore';
 import { Student } from '../model/student';
+import { environment } from 'src/environments/environment';
 
 const getWorkerPath = () => {
-  if (process.env.NODE_ENV === 'development') {
-    return require('file-loader?name=scripts/[name].[hash].js!jsstore/dist/jsstore.worker.js');
-  } else {
+  if (environment.production) {
     return require('file-loader?name=scripts/[name].[hash].js!jsstore/dist/jsstore.worker.min.js');
+  } else {
+    return require('file-loader?name=scripts/[name].[hash].js!jsstore/dist/jsstore.worker.js');
   }
 };
 
