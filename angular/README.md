@@ -1,4 +1,11 @@
-# Angular
+# JsStore integration with Angular
+
+This is an example for jsstore for angular. It shows a demo of how to integrte jsstore with angular & some basic api call for a crud operation.
+
+Some important points - 
+
+* The JsStore codes are inside folder service.
+* JsStore is initiated in `app.component.ts`  in `ngOnInit` method.
 
 This project was generated with [Angular CLI](https://github.com/angular/angular-cli) version 7.3.9.
 
