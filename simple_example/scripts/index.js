@@ -22,10 +22,26 @@ function getDbSchema() {
     var table = {
         name: 'Student',
         columns: {
-            id: { autoIncrement: true, primaryKey: true },
-            name: { dataType: 'string' },
-            country: {},
-            city: {}
+            id: {
+                primaryKey: true,
+                autoIncrement: true
+            },
+            name: {
+                notNull: true,
+                dataType: 'string'
+            },
+            gender: {
+                dataType: 'string',
+                default: 'male'
+            },
+            country: {
+                notNull: true,
+                dataType: 'string'
+            },
+            city: {
+                dataType: 'string',
+                notNull: true
+            }
         }
     }
 
@@ -73,11 +89,12 @@ function registerEvents() {
 
 
 //This function refreshes the table
-function refreshTableData() {
-    var htmlString = "";
-    jsstoreCon.select({
-        from: 'Student'
-    }).then(function (students) {
+async function refreshTableData() {
+    try {
+        var htmlString = "";
+        var students = await jsstoreCon.select({
+            from: 'Student'
+        });
         students.forEach(function (student) {
             htmlString += "<tr ItemId=" + student.id + "><td>" +
                 student.name + "</td><td>" +
@@ -88,56 +105,68 @@ function refreshTableData() {
                 "<td><a href='#' class='delete''>Delete</a></td>";
         })
         $('#tblGrid tbody').html(htmlString);
-    }).catch(function (err) {
-        console.error(err);
-    })
-
+    } catch (ex) {
+        alert(ex.message)
+    }
 }
 
 
 
 async function addStudent() {
     var student = getStudentFromForm();
-    var noOfDataInserted = await jsstoreCon.insert({
-        into: 'Student',
-        values: [student]
-    });
-    if (noOfDataInserted === 1) {
-        refreshTableData();
-        showGridAndHideForm();
+    try {
+        var noOfDataInserted = await jsstoreCon.insert({
+            into: 'Student',
+            values: [student]
+        });
+        if (noOfDataInserted === 1) {
+            refreshTableData();
+            showGridAndHideForm();
+        }
+    } catch (ex) {
+        alert(ex.message);
     }
+
 }
 
 async function updateStudent() {
     var student = getStudentFromForm();
-    var noOfDataUpdated = await jsstoreCon.update({
-        in: 'Student',
-        set: {
-            name: student.name,
-            gender: student.gender,
-            country: student.country,
-            city: student.city
-        },
-        where: {
-            id: student.id
-        }
-    });
-    console.log(`data updated ${noOfDataUpdated}`);
-    showGridAndHideForm();
-    $('form').attr('data-student-id', null);
-    refreshTableData();
-    refreshFormData({});
+    try {
+        var noOfDataUpdated = await jsstoreCon.update({
+            in: 'Student',
+            set: {
+                name: student.name,
+                gender: student.gender,
+                country: student.country,
+                city: student.city
+            },
+            where: {
+                id: student.id
+            }
+        });
+        console.log(`data updated ${noOfDataUpdated}`);
+        showGridAndHideForm();
+        $('form').attr('data-student-id', null);
+        refreshTableData();
+        refreshFormData({});
+    } catch (ex) {
+        alert(ex.message);
+    }
 }
 
 async function deleteStudent(id) {
-    var noOfStudentRemoved = await jsstoreCon.remove({
-        from: 'Student',
-        where: {
-            id: id
-        }
-    });
-    console.log(`${noOfStudentRemoved} students removed`);
-    refreshTableData();
+    try {
+        var noOfStudentRemoved = await jsstoreCon.remove({
+            from: 'Student',
+            where: {
+                id: id
+            }
+        });
+        console.log(`${noOfStudentRemoved} students removed`);
+        refreshTableData();
+    } catch (ex) {
+        alert(ex.message);
+    }
 }
 
 function getStudentFromForm() {
