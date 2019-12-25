@@ -3,7 +3,6 @@ import { StudentService } from '../service/student.service';
 import { Student, IStudent } from '../model/student';
 
 
-
 @Component({
 
   selector: 'app-student',
@@ -21,6 +20,8 @@ export class StudentComponent implements OnInit {
   students: Array<IStudent> = [];
   newStudent: IStudent = new Student();
   oldStudent: IStudent = new Student();
+
+  editing = false;
 
   constructor(service: StudentService) {
     this.service = service;

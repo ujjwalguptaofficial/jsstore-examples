@@ -2,6 +2,7 @@ import * as JsStore from 'jsstore';
 import { IDataBase, DATA_TYPE, ITable } from 'jsstore';
 import { Student } from '../model/student';
 import { environment } from 'src/environments/environment';
+declare var require: any;
 
 const getWorkerPath = () => {
   if (environment.production) {
