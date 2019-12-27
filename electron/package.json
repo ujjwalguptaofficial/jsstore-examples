@@ -5,6 +5,7 @@
   "main": "dist/scripts/app.js",
   "scripts": {
     "start": "webpack && electron .",
+    "dev": "npm run start",
     "build": "webpack"
   },
   "repository": "https://github.com/electron/electron-quick-start",
@@ -19,7 +20,7 @@
   "license": "CC0-1.0",
   "dependencies": {
     "jquery": "^3.3.1",
-    "jsstore": "^3.5.0"
+    "jsstore": "^3.6.2"
   },
   "devDependencies": {
     "copy-webpack-plugin": "^4.5.1",

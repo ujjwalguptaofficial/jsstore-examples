@@ -13,7 +13,7 @@
   "author": "",
   "license": "ISC",
   "dependencies": {
-    "jsstore": "^3.5.0",
+    "jsstore": "^3.6.2",
     "react": "^16.7.0",
     "react-dom": "^16.7.0"
   },
@@ -26,7 +26,7 @@
     "file-loader": "^3.0.1",
     "html-webpack-plugin": "^3.2.0",
     "webpack": "^4.41.3",
-    "webpack-cli": "^2.0.15",
+    "webpack-cli": "^3.3.10",
     "webpack-dev-server": "^3.9.0"
   }
 }
