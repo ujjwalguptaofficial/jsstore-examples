@@ -13,9 +13,8 @@ const getWorkerPath = () => {
 // This will ensure that we are using only one instance. 
 // Otherwise due to multiple instance multiple worker will be created.
 const workerPath = getWorkerPath();
-console.log('workerpath', workerPath);
-export const idbCon = new JsStore.Instance(new Worker(workerPath.default));
-export const dbname = 'Demo';
+export const idbCon = new JsStore.Connection(new Worker(workerPath.default));
+export const dbname = 'Svelte_Demo';
 
 const getDatabase = () => {
     const tblProduct = {

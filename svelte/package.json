@@ -24,7 +24,7 @@
   "author": "",
   "license": "ISC",
   "dependencies": {
-    "jsstore": "^3.5.0",
+    "jsstore": "^3.6.2",
     "svelte": "^3.16.4"
   }
 }

@@ -9,7 +9,7 @@
   },
   "dependencies": {
     "core-js": "^2.6.5",
-    "jsstore": "^3.5.0",
+    "jsstore": "^3.6.2",
     "vue": "^2.6.10"
   },
   "devDependencies": {

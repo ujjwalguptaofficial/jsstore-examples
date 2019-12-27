@@ -1,6 +1,6 @@
 
 
-var jsstoreCon = new JsStore.Instance();
+var jsstoreCon = new JsStore.Connection();
 
 window.onload = function () {
     refreshTableData();

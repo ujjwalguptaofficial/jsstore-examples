@@ -11,5 +11,5 @@ const getWorkerPath = () => {
 };
 
 const workerPath = getWorkerPath();
-export const connection = new JsStore.Instance(new Worker(workerPath));
+export const connection = new JsStore.Connection(new Worker(workerPath));
 connection.setLogStatus(true);
