@@ -8,7 +8,7 @@
   },
   "dependencies": {
     "jquery": "^3.4.0",
-    "jsstore": "^3.5.0"
+    "jsstore": "^3.6.1"
   },
   "devDependencies": {
     "css-loader": "^0.28.11",

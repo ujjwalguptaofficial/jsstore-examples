@@ -14,10 +14,8 @@ const getWorkerPath = () => {
 
 // This will ensure that we are using only one instance. 
 // Otherwise due to multiple instance multiple worker will be created.
-export const idbCon = new JsStore.Instance(new Worker(getWorkerPath().default));
+export const idbCon = new JsStore.Connection(new Worker(getWorkerPath().default));
 export const dbname = 'Angular_Demo';
-
-
 
 
 const getDatabase = () => {
