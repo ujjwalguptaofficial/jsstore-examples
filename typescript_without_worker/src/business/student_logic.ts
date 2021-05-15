@@ -16,27 +16,27 @@ export class StudentLogic {
             this.addStudent();
         });
         // edit button
-        $('#divContainer').on('click', 'td .btn-edit', (el) => {
+        $('#divContainer').on('click', 'td .btn-edit', (el:any) => {
             const id = $(el.target).parents('tr').attr('data-id');
             this.editStudent(Number(id));
         });
         // delete button
-        $('#divContainer').on('click', 'td .btn-delete', (el) => {
+        $('#divContainer').on('click', 'td .btn-delete', (el:any) => {
             const id = $(el.target).parents('tr').attr('data-id');
             this.deleteStudent(Number(id));
         });
 
-        $('#divContainer').on('click', 'td .btn-update', (el) => {
+        $('#divContainer').on('click', 'td .btn-update', (el:any) => {
             const id = $(el.target).parents('tr').attr('data-id');
             this.updateStudent(Number(id));
         });
 
-        $('#divContainer').on('click', 'td .btn-add-cancel', (el) => {
+        $('#divContainer').on('click', 'td .btn-add-cancel', (el: any) => {
             const row = $(el.target).parents('tr');
             row.find('input').val('');
         });
 
-        $('#divContainer').on('click', 'td .btn-update-cancel', (el) => {
+        $('#divContainer').on('click', 'td .btn-update-cancel', () => {
             this.refreshStudentList();
         });
 
@@ -57,7 +57,7 @@ export class StudentLogic {
                 </tr>`;
     }
 
-    async deleteStudent(studentId) {
+    async deleteStudent(studentId: number) {
 
         try {
             const rowsDeleted = await this.service.deleteStudent(studentId);
@@ -71,7 +71,7 @@ export class StudentLogic {
         }
     }
 
-    async  updateStudent(studentId) {
+    async updateStudent(studentId: number) {
         const columns = $("#tblStudents tbody tr[data-id='" + studentId + "']").find('td');
         const updatedValue: Student = {
             name: columns[0].querySelector('input').value,
@@ -93,7 +93,7 @@ export class StudentLogic {
         }
     }
 
-    async  addStudent() {
+    async addStudent() {
         const columns = document.querySelectorAll('.tr-add td');
         const student: Student = {
             name: columns[0].querySelector('input').value,
@@ -114,7 +114,7 @@ export class StudentLogic {
         }
     }
 
-    async editStudent(studentId) {
+    async editStudent(studentId: number) {
 
         try {
             const students = await this.service.getStudent(studentId);

@@ -1,11 +1,11 @@
-import * as JsStoreWorker from "jsstore/dist/jsstore.worker.commonjs2";
-window['JsStoreWorker'] = JsStoreWorker;
-import * as JsStore from 'jsstore';
-import { ITable, DATA_TYPE, IDataBase } from "jsstore";
+import { ITable, DATA_TYPE, IDataBase, Connection } from "jsstore";
+import workerInjector from "jsstore/dist/worker_injector";
 
 // This will ensure that we are using only one instance. 
 // Otherwise due to multiple instance multiple worker will be created.
-export const idbCon = new JsStore.Connection();
+export const idbCon = new Connection();
+idbCon.addPlugin(workerInjector);
+
 export const dbname = 'Demo';
 
 const getDatabase = () => {

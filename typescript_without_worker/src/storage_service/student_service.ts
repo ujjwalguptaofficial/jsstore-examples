@@ -2,7 +2,7 @@ import { BaseService } from './base_service';
 import { Student } from '../model/student';
 
 export class StudentService extends BaseService {
-    
+
     getStudents() {
         return this.connection.select<Student>({
             from: 'Students'
@@ -34,7 +34,7 @@ export class StudentService extends BaseService {
         });
     }
 
-    updateStudent(studentId: number, value) {
+    updateStudent(studentId: number, value: any) {
         return this.connection.update({
             in: 'Students',
             set: value,
