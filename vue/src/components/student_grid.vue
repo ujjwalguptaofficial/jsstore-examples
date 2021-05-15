@@ -27,7 +27,7 @@
       </td>
     </tr>
     <tr v-for="student in students" :key="student.id">
-      <template v-if="editStudent.id==student.id">
+      <template v-if="editStudent.id == student.id">
         <td>
           <input type="text" v-model="editStudent.name" />
         </td>
@@ -48,10 +48,10 @@
         </td>
       </template>
       <template v-else>
-        <td>{{student.name}}</td>
-        <td>{{student.gender}}</td>
-        <td>{{student.country}}</td>
-        <td>{{student.city}}</td>
+        <td>{{ student.name }}</td>
+        <td>{{ student.gender }}</td>
+        <td>{{ student.country }}</td>
+        <td>{{ student.city }}</td>
         <td>
           <button @click="edit(student.id)">Edit</button>
         </td>
@@ -69,17 +69,17 @@ export default {
   props: {
     students: {
       required: true,
-      type: Array
-    }
+      type: Array,
+    },
   },
-  data: function() {
+  data: function () {
     return {
       newStudent: null,
       editStudent: {},
-      service: new StudentService()
+      service: new StudentService(),
     };
   },
-  beforeMount: function() {
+  beforeMount: function () {
     this.clear();
   },
   methods: {
@@ -97,28 +97,26 @@ export default {
         name: "",
         gender: "",
         country: "",
-        city: ""
+        city: "",
       };
     },
     edit(id) {
-      var student = this.students.find(qry => qry.id === id);
+      var student = this.students.find((qry) => qry.id === id);
       this.editStudent = {
         id: student.id,
         name: student.name,
         gender: student.gender,
         country: student.country,
-        city: student.city
+        city: student.city,
       };
     },
     async remove(id) {
-      const service = new StudentService();
       const noOfStudentRemoved = await this.service.removeStudent(id);
       if (noOfStudentRemoved > 0) {
         this.$emit("remove-item");
       }
     },
-    async update(id) {
-      debugger;
+    async update() {
       const noOfStudentsUpdated = await this.service.updateStudentById(
         this.editStudent
       );
@@ -129,8 +127,8 @@ export default {
     },
     cancelUpdate() {
       this.editStudent = {};
-    }
-  }
+    },
+  },
 };
 </script>
 

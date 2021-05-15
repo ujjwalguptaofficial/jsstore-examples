@@ -10,6 +10,7 @@ const getWorkerPath = () => {
     }
 };
 
-const workerPath = getWorkerPath();
+const workerPath = getWorkerPath().default;
 export const connection = new JsStore.Connection(new Worker(workerPath));
-connection.setLogStatus(true);
+
+connection.logStatus = true;
