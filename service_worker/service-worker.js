@@ -1,16 +1,15 @@
-importScripts('https://cdn.jsdelivr.net/npm/jsstore@3.5.0/dist/jsstore.min.js');
-importScripts('https://cdn.jsdelivr.net/npm/jsstore@3.5.0/dist/jsstore.worker.min.js');
+importScripts('https://cdn.jsdelivr.net/npm/jsstore@4.0.0/dist/jsstore.min.js');
+importScripts('https://cdn.jsdelivr.net/npm/jsstore@4.0.0/dist/jsstore.worker.min.js');
 
 self.addEventListener('fetch', function (event) {
   console.log("fetch event:", event.request.url);
 });
 
-var connection;
 var dbName = "Demo";
 
 async function initDb() {
-  connection = new JsStore.Instance();
-  var isDbCreated = await jsstoreCon.initDb(getDbSchema());
+  var connection = new JsStore.Instance();
+  var isDbCreated = await connection.initDb(getDbSchema());
   if (isDbCreated) {
     console.log('db created');
   }
