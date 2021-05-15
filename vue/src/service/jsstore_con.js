@@ -1,4 +1,4 @@
-import * as JsStore from "jsstore";
+import { Connection } from "jsstore";
 
 const getWorkerPath = () => {
     // return dev build when env is development
@@ -11,6 +11,6 @@ const getWorkerPath = () => {
 };
 
 const workerPath = getWorkerPath().default;
-export const connection = new JsStore.Connection(new Worker(workerPath));
+export const connection = new Connection(new Worker(workerPath));
 
 connection.logStatus = true;

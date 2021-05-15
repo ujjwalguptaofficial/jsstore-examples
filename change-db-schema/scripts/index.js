@@ -248,7 +248,7 @@ async function changeDbSchemaToV2AndRestoreUsingMemory() {
     }
 }
 
-function getDbSchemaV2ForWithoutMemory() {
+function getDbSchemaV2WithAnotherTable() {
     var table = {
         name: 'Student',
         columns: {
@@ -289,7 +289,7 @@ function getDbSchemaV2ForWithoutMemory() {
 async function changeDbSchemaToV2AndRestoreWithAnotherTable() {
 
 
-    var isDbCreated = await jsstoreCon.initDb(getDbSchemaV2ForWithoutMemory());
+    var isDbCreated = await jsstoreCon.initDb(getDbSchemaV2WithAnotherTable());
     if (isDbCreated) {
 
         var allData = await jsstoreCon.select({

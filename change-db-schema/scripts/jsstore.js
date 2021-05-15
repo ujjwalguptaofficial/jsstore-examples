@@ -1,7 +1,7 @@
 /*!
- * @license :jsstore - V3.7.6 - 09/03/2020
+ * @license :jsstore - V4.0.0 - 15/05/2021
  * https://github.com/ujjwalguptaofficial/JsStore
- * Copyright (c) 2020 @Ujjwal Gupta; Licensed MIT
+ * Copyright (c) 2021 @Ujjwal Gupta; Licensed MIT
  */
 var JsStore =
 /******/
@@ -262,16 +262,86 @@ function (modules) {
 
 /***/
 function (module, __webpack_exports__, __webpack_require__) {
-  "use strict";
+  "use strict"; // ESM COMPAT FLAG
 
-  __webpack_require__.r(__webpack_exports__); // CONCATENATED MODULE: ./src/common/enums.ts
+  __webpack_require__.r(__webpack_exports__); // EXPORTS
+
+
+  __webpack_require__.d(__webpack_exports__, "Connection", function () {
+    return (
+      /* reexport */
+      connection_Connection
+    );
+  });
+
+  __webpack_require__.d(__webpack_exports__, "workerInjector", function () {
+    return (
+      /* reexport */
+      workerInjector
+    );
+  });
+
+  __webpack_require__.d(__webpack_exports__, "DATA_TYPE", function () {
+    return (
+      /* reexport */
+      DATA_TYPE
+    );
+  }); // CONCATENATED MODULE: ./src/main/log_helper.ts
+
+
+  var LogHelper =
+  /** @class */
+  function () {
+    function LogHelper(type, info) {
+      this.type = type;
+      this._info = info;
+      this.message = this.getMsg();
+    }
+
+    LogHelper.prototype.throw = function () {
+      throw this.get();
+    };
+
+    LogHelper.prototype.log = function (msg) {
+      if (this.status) {
+        console.log(msg);
+      }
+    };
+
+    LogHelper.prototype.logError = function () {
+      console.error(this.get());
+    };
+
+    LogHelper.prototype.logWarning = function () {
+      console.warn(this.get());
+    };
+
+    LogHelper.prototype.get = function () {
+      return {
+        message: this.message,
+        type: this.type
+      };
+    };
+
+    LogHelper.prototype.getMsg = function () {
+      var errMsg;
+
+      switch (this.type) {
+        default:
+          errMsg = this.message;
+          break;
+      }
+
+      return errMsg;
+    };
+
+    return LogHelper;
+  }(); // CONCATENATED MODULE: ./src/common/enums.ts
 
 
   var ERROR_TYPE;
 
   (function (ERROR_TYPE) {
-    ERROR_TYPE["WorkerNotSupplied"] = "worker_not_supplied";
-    ERROR_TYPE["IndexedDbUndefined"] = "indexeddb_undefined";
     ERROR_TYPE["UndefinedColumn"] = "undefined_column";
     ERROR_TYPE["UndefinedValue"] = "undefined_value";
     ERROR_TYPE["UndefinedColumnName"] = "undefined_column_name";
@@ -297,6 +367,9 @@ function (module, __webpack_exports__, __webpack_require__) {
     ERROR_TYPE["InvalidOrderQuery"] = "invalid_order_query";
     ERROR_TYPE["InvalidQuery"] = "invalid_query";
     ERROR_TYPE["InvalidGroupQuery"] = "invalid_group_query";
+    ERROR_TYPE["ImportScriptsFailed"] = "import_scripts_failed";
+    ERROR_TYPE["MethodNotExist"] = "method_not_exist";
+    ERROR_TYPE["Unknown"] = "unknown";
   })(ERROR_TYPE || (ERROR_TYPE = {}));
 
   var WORKER_STATUS;
@@ -323,16 +396,12 @@ function (module, __webpack_exports__, __webpack_require__) {
 
   (function (API) {
     API["InitDb"] = "init_db";
-    API["IsDbExist"] = "is_db_exist";
-    API["GetDbVersion"] = "get_db_version";
-    API["GetDbList"] = "get_db_list";
     API["Get"] = "get";
     API["Set"] = "set";
     API["Select"] = "select";
     API["Insert"] = "insert";
     API["Update"] = "update";
     API["Remove"] = "remove";
-    API["GetDbSchema"] = "get_db_schema";
     API["OpenDb"] = "open_db";
     API["Clear"] = "clear";
     API["DropDb"] = "drop_db";
@@ -340,9 +409,10 @@ function (module, __webpack_exports__, __webpack_require__) {
     API["ChangeLogStatus"] = "change_log_status";
     API["Terminate"] = "terminate";
     API["Transaction"] = "transaction";
-    API["InitKeyStore"] = "init_keystore";
     API["CloseDb"] = "close_db";
     API["Union"] = "union";
+    API["Intersect"] = "intersect";
+    API["ImportScripts"] = "import_scripts";
   })(API || (API = {}));
 
   var EVENT;
@@ -403,116 +473,46 @@ function (module, __webpack_exports__, __webpack_require__) {
     CONNECTION_STATUS["NotStarted"] = "not_started";
     CONNECTION_STATUS["UnableToStart"] = "unable_to_start";
     CONNECTION_STATUS["ClosedByJsStore"] = "closed_by_jsstore";
-  })(CONNECTION_STATUS || (CONNECTION_STATUS = {})); // CONCATENATED MODULE: ./src/main/config.ts
+  })(CONNECTION_STATUS || (CONNECTION_STATUS = {})); // CONCATENATED MODULE: ./src/common/utils/promise.ts
 
 
-  var Config =
-  /** @class */
-  function () {
-    function Config() {}
-
-    Config.isLogEnabled = false;
-    Config.isRuningInWorker = true;
-    return Config;
-  }(); // CONCATENATED MODULE: ./src/main/log_helper.ts
-
-
-  var log_helper_LogHelper =
-  /** @class */
-  function () {
-    function LogHelper(type, info) {
-      if (info === void 0) {
-        info = null;
-      }
-
-      this.type = type;
-      this._info = info;
-      this.message = this.getMsg();
-    }
-
-    LogHelper.prototype.throw = function () {
-      throw this.get();
-    };
-
-    LogHelper.log = function (msg) {
-      if (Config.isLogEnabled) {
-        console.log(msg);
-      }
-    };
-
-    LogHelper.prototype.logError = function () {
-      console.error(this.get());
-    };
-
-    LogHelper.prototype.logWarning = function () {
-      console.warn(this.get());
-    };
-
-    LogHelper.prototype.get = function () {
-      return {
-        message: this.message,
-        type: this.type
-      };
-    };
-
-    LogHelper.prototype.getMsg = function () {
-      var errMsg;
-
-      switch (this.type) {
-        case ERROR_TYPE.WorkerNotSupplied:
-          errMsg = "Worker object is not passed in instance constructor";
-          break;
-
-        case ERROR_TYPE.IndexedDbUndefined:
-          errMsg = "Browser does not support indexeddb";
-          break;
-
-        default:
-          errMsg = this.message;
-          break;
-      }
-
-      return errMsg;
-    };
-
-    return LogHelper;
-  }(); // CONCATENATED MODULE: ./src/main/connection_helper.ts
+  var promise = function (cb) {
+    return new Promise(cb);
+  }; // CONCATENATED MODULE: ./src/main/connection_helper.ts
 
 
   var connection_helper_ConnectionHelper =
   /** @class */
   function () {
     function ConnectionHelper(worker) {
-      this.isDbOpened_ = false;
+      this.isConOpened_ = false;
       this.isDbIdle_ = true;
       this.requestQueue_ = [];
       this.isCodeExecuting_ = false;
       this.inactivityTimer_ = -1000;
-      this.eventQueue = []; // these apis have special permissions. These apis dont wait for database open.
+      this.eventQueue = [];
+      this.middlewares = []; // these apis have special permissions. These apis dont wait for database open.
 
-      this.whiteListApi_ = [API.InitDb, API.IsDbExist, API.GetDbVersion, API.GetDbList, API.OpenDb, API.GetDbSchema, API.Get, API.Set, API.ChangeLogStatus, API.Terminate, API.InitKeyStore];
+      this.whiteListApi_ = [API.InitDb, API.OpenDb, API.Get, API.Set, API.ChangeLogStatus, API.Terminate, API.DropDb];
+      this.isRuningInWorker = true;
+      this.logger = new LogHelper(null);
 
       if (worker) {
         this.worker_ = worker;
         this.worker_.onmessage = this.onMessageFromWorker_.bind(this);
       } else {
-        Config.isRuningInWorker = false;
+        this.isRuningInWorker = false;
+        this.queryManager = new this.jsstoreWorker.QueryManager(this.processFinishedQuery_.bind(this));
       }
     }
 
-    ConnectionHelper.prototype.initKeyStore_ = function () {
-      if (Config.isRuningInWorker) {
-        this.prcoessExecutionOfQry_({
-          name: API.InitKeyStore,
-          onSuccess: function () {},
-          onError: function (err) {
-            console.error(err);
-          }
-        }, 0);
-      } else {
-        JsStoreWorker.KeyStore.init();
-      }
-    };
+    Object.defineProperty(ConnectionHelper.prototype, "jsstoreWorker", {
+      get: function () {
+        return this.$worker || JsStoreWorker;
+      },
+      enumerable: false,
+      configurable: true
+    });
 
     ConnectionHelper.prototype.onMessageFromWorker_ = function (msg) {
       this.processFinishedQuery_(msg.data);
@@ -522,24 +522,28 @@ function (module, __webpack_exports__, __webpack_require__) {
       var finishedRequest = this.requestQueue_.shift();
 
       if (finishedRequest) {
-        log_helper_LogHelper.log("request " + finishedRequest.name + " finished");
+        this.logger.log("request " + finishedRequest.name + " finished");
 
-        if (message.errorOccured) {
-          finishedRequest.onError(message.errorDetails);
+        if (message.error) {
+          finishedRequest.onError(message.error);
         } else {
           switch (finishedRequest.name) {
             case API.OpenDb:
             case API.InitDb:
-              this.isDbOpened_ = true;
+              this.isConOpened_ = true;
               break;
 
             case API.Terminate:
-              this.isDbOpened_ = false;
+              this.isConOpened_ = false;
 
-              if (Config.isRuningInWorker === true) {
+              if (this.isRuningInWorker === true) {
                 this.worker_.terminate();
               }
 
+            case API.DropDb:
+              this.isConOpened_ = false;
+              this.requestQueue_ = [];
+              this.isDbIdle_ = true;
               break;
 
             case API.CloseDb:
@@ -553,7 +557,7 @@ function (module, __webpack_exports__, __webpack_require__) {
               break;
           }
 
-          finishedRequest.onSuccess(message.returnedValue);
+          finishedRequest.onSuccess(message.result);
         }
 
         this.isCodeExecuting_ = false;
@@ -562,42 +566,60 @@ function (module, __webpack_exports__, __webpack_require__) {
     };
 
     ConnectionHelper.prototype.openDb_ = function () {
-      this.initKeyStore_();
       this.prcoessExecutionOfQry_({
         name: API.OpenDb,
-        query: this.activeDbName,
+        query: {
+          name: this.database.name,
+          version: this.database.version
+        },
         onSuccess: function () {},
         onError: function (err) {
           console.error(err);
         }
-      }, 1);
+      }, 0);
+    };
+
+    ConnectionHelper.prototype.executeMiddleware_ = function (input) {
+      var _this = this;
+
+      return promise(function (res) {
+        var index = 0;
+        var lastIndex = _this.middlewares.length - 1;
+
+        var callNextMiddleware = function () {
+          if (index <= lastIndex) {
+            _this.middlewares[index++](input, callNextMiddleware);
+          } else {
+            res();
+          }
+        };
+
+        callNextMiddleware();
+      });
     };
 
     ConnectionHelper.prototype.pushApi = function (request) {
       var _this = this;
 
       return new Promise(function (resolve, reject) {
-        request.onSuccess = function (result) {
-          resolve(result);
-        };
+        _this.executeMiddleware_(request).then(function () {
+          request.onSuccess = resolve;
+          request.onError = reject;
 
-        request.onError = function (error) {
-          reject(error);
-        };
+          if (_this.requestQueue_.length === 0) {
+            _this.callEvent(EVENT.RequestQueueFilled, []);
 
-        if (_this.requestQueue_.length === 0) {
-          _this.callEvent(EVENT.RequestQueueFilled, []);
+            var isConnectionApi = [API.CloseDb, API.DropDb, API.OpenDb, API.Terminate].indexOf(request.name) >= 0;
 
-          if (_this.isDbIdle_ === true && _this.isDbOpened_ === true) {
-            _this.openDb_();
-          } else {
-            clearTimeout(_this.inactivityTimer_);
-
-            _this.initKeyStore_();
+            if (!isConnectionApi && _this.isDbIdle_ && _this.isConOpened_) {
+              _this.openDb_();
+            } else {
+              clearTimeout(_this.inactivityTimer_);
+            }
           }
-        }
 
-        _this.prcoessExecutionOfQry_(request);
+          _this.prcoessExecutionOfQry_(request);
+        }).catch(reject);
       });
     };
 
@@ -610,7 +632,7 @@ function (module, __webpack_exports__, __webpack_require__) {
         this.requestQueue_.push(request);
       }
 
-      log_helper_LogHelper.log("request pushed: " + request.name);
+      this.logger.log("request pushed: " + request.name);
       this.executeQry_();
     };
 
@@ -620,7 +642,7 @@ function (module, __webpack_exports__, __webpack_require__) {
       var requestQueueLength = this.requestQueue_.length;
 
       if (!this.isCodeExecuting_ && requestQueueLength > 0) {
-        if (this.isDbOpened_ === true) {
+        if (this.isConOpened_ === true) {
           this.sendRequestToWorker_(this.requestQueue_[0]);
           return;
         }
@@ -633,7 +655,7 @@ function (module, __webpack_exports__, __webpack_require__) {
           this.requestQueue_.splice(0, 0, this.requestQueue_.splice(allowedQueryIndex, 1)[0]);
           this.sendRequestToWorker_(this.requestQueue_[0]);
         }
-      } else if (requestQueueLength === 0 && this.isDbIdle_ === false && this.isDbOpened_) {
+      } else if (requestQueueLength === 0 && this.isDbIdle_ === false && this.isConOpened_) {
         this.inactivityTimer_ = setTimeout(function () {
           _this.prcoessExecutionOfQry_({
             name: API.CloseDb,
@@ -648,15 +670,16 @@ function (module, __webpack_exports__, __webpack_require__) {
 
     ConnectionHelper.prototype.sendRequestToWorker_ = function (request) {
       this.isCodeExecuting_ = true;
+      this.logger.log("request executing: " + request.name);
       var requestForWorker = {
         name: request.name,
         query: request.query
       };
 
-      if (Config.isRuningInWorker === true) {
+      if (this.isRuningInWorker === true) {
         this.worker_.postMessage(requestForWorker);
       } else {
-        new JsStoreWorker.QueryExecutor(this.processFinishedQuery_.bind(this)).checkConnectionAndExecuteLogic(requestForWorker);
+        this.queryManager.run(requestForWorker);
       }
     };
 
@@ -672,25 +695,6 @@ function (module, __webpack_exports__, __webpack_require__) {
     };
 
     return ConnectionHelper;
-  }(); // CONCATENATED MODULE: ./src/main/util.ts
-
-
-  var Util =
-  /** @class */
-  function () {
-    function Util() {}
-
-    Object.defineProperty(Util, "sqlWeb", {
-      get: function () {
-        return Util.sqlWeb_ == null ? self['SqlWeb'] : Util.sqlWeb_;
-      },
-      set: function (value) {
-        Util.sqlWeb_ = value;
-      },
-      enumerable: true,
-      configurable: true
-    });
-    return Util;
   }(); // CONCATENATED MODULE: ./src/main/connection.ts
 
 
@@ -701,13 +705,14 @@ function (module, __webpack_exports__, __webpack_require__) {
       } instanceof Array && function (d, b) {
         d.__proto__ = b;
       } || function (d, b) {
-        for (var p in b) if (b.hasOwnProperty(p)) d[p] = b[p];
+        for (var p in b) if (Object.prototype.hasOwnProperty.call(b, p)) d[p] = b[p];
       };
 
       return extendStatics(d, b);
     };
 
     return function (d, b) {
+      if (typeof b !== "function" && b !== null) throw new TypeError("Class extends value " + String(b) + " is not a constructor or null");
       extendStatics(d, b);
 
       function __() {
@@ -727,32 +732,16 @@ function (module, __webpack_exports__, __webpack_require__) {
       return _super.call(this, worker) || this;
     }
     /**
-     *  open database
-     *
-     * @param {string} dbName
-     * @returns
-     * @memberof Instance
-     */
-
-
-    Connection.prototype.openDb = function (dbName) {
-      this.activeDbName = dbName;
-      return this.pushApi({
-        name: API.OpenDb,
-        query: dbName
-      });
-    };
-    /**
      * creates DataBase
      *
      * @param {IDataBase} dataBase
      * @returns
-     * @memberof Instance
+     * @memberof Connection
      */
 
 
     Connection.prototype.initDb = function (dataBase) {
-      this.activeDbName = dataBase.name;
+      this.database = dataBase;
       return this.pushApi({
         name: API.InitDb,
         query: dataBase
@@ -762,14 +751,13 @@ function (module, __webpack_exports__, __webpack_require__) {
      * drop dataBase
      *
      * @returns
-     * @memberof Instance
+     * @memberof Connection
      */
 
 
     Connection.prototype.dropDb = function () {
       return this.pushApi({
-        name: API.DropDb,
-        query: null
+        name: API.DropDb
       });
     };
     /**
@@ -778,7 +766,7 @@ function (module, __webpack_exports__, __webpack_require__) {
      * @template T
      * @param {SelectQuery} query
      * @returns
-     * @memberof Instance
+     * @memberof Connection
      */
 
 
@@ -793,7 +781,7 @@ function (module, __webpack_exports__, __webpack_require__) {
      *
      * @param {CountQuery} query
      * @returns
-     * @memberof Instance
+     * @memberof Connection
      */
 
 
@@ -806,9 +794,10 @@ function (module, __webpack_exports__, __webpack_require__) {
     /**
      * insert data into table
      *
+     * @template T
      * @param {InsertQuery} query
      * @returns
-     * @memberof Instance
+     * @memberof Connection
      */
 
 
@@ -823,7 +812,7 @@ function (module, __webpack_exports__, __webpack_require__) {
      *
      * @param {UpdateQuery} query
      * @returns
-     * @memberof Instance
+     * @memberof Connection
      */
 
 
@@ -838,7 +827,7 @@ function (module, __webpack_exports__, __webpack_require__) {
      *
      * @param {RemoveQuery} query
      * @returns
-     * @memberof Instance
+     * @memberof Connection
      */
 
 
@@ -853,7 +842,7 @@ function (module, __webpack_exports__, __webpack_require__) {
      *
      * @param {string} tableName
      * @returns
-     * @memberof Instance
+     * @memberof Connection
      */
 
 
@@ -863,86 +852,65 @@ function (module, __webpack_exports__, __webpack_require__) {
         query: tableName
       });
     };
-    /**
-     * set log status
-     *
-     * @param {boolean} status
-     * @memberof Instance
-     */
 
-
-    Connection.prototype.setLogStatus = function (status) {
-      Config.isLogEnabled = status ? status : Config.isLogEnabled;
-      this.pushApi({
-        name: API.ChangeLogStatus,
-        query: Config.isLogEnabled
-      });
-    };
+    Object.defineProperty(Connection.prototype, "logStatus", {
+      /**
+       * set log status
+       *
+       * @param {boolean} status
+       * @memberof Connection
+       */
+      set: function (status) {
+        this.logger.status = status;
+        this.pushApi({
+          name: API.ChangeLogStatus,
+          query: status
+        });
+      },
+      enumerable: false,
+      configurable: true
+    });
     /**
-     * get version of database
+     * open database
      *
-     * @param {(string | DbInfo)} dbName
+     * @param {string} dbName
      * @returns
-     * @memberof Instance
+     * @memberof Connection
      */
 
+    Connection.prototype.openDb = function (dbName, version) {
+      var _this = this;
 
-    Connection.prototype.getDbVersion = function (dbName) {
       return this.pushApi({
-        name: API.GetDbVersion,
-        query: dbName
-      });
-    };
-    /**
-     * is database exist
-     *
-     * @param {(DbInfo | string)} dbInfo
-     * @returns
-     * @memberof Instance
-     */
-
-
-    Connection.prototype.isDbExist = function (dbInfo) {
-      return this.pushApi({
-        name: API.IsDbExist,
-        query: dbInfo
+        name: API.OpenDb,
+        query: {
+          version: version,
+          name: dbName
+        }
+      }).then(function (dataBase) {
+        _this.database = dataBase;
+        return dataBase;
       });
     };
     /**
      * returns list of database created
      *
      * @returns
-     * @memberof Instance
+     * @memberof Connection
      */
 
 
     Connection.prototype.getDbList = function () {
-      return this.pushApi({
-        name: API.GetDbList,
-        query: null
-      });
-    };
-    /**
-     * get Database Schema
-     *
-     * @param {string} dbName
-     * @returns
-     * @memberof Instance
-     */
-
-
-    Connection.prototype.getDbSchema = function (dbName) {
-      return this.pushApi({
-        name: API.GetDbSchema,
-        query: dbName
-      });
+      console.warn("Api getDbList is recommended to use for debugging only. Do not use in code.");
+      return indexedDB.databases();
     };
     /**
      * get the value from keystore table
      *
+     * @template T
      * @param {string} key
      * @returns
-     * @memberof Instance
+     * @memberof Connection
      */
 
 
@@ -958,7 +926,7 @@ function (module, __webpack_exports__, __webpack_require__) {
      * @param {string} key
      * @param {*} value
      * @returns
-     * @memberof Instance
+     * @memberof Connection
      */
 
 
@@ -975,47 +943,30 @@ function (module, __webpack_exports__, __webpack_require__) {
      * terminate the connection
      *
      * @returns
-     * @memberof Instance
+     * @memberof Connection
      */
 
 
     Connection.prototype.terminate = function () {
       return this.pushApi({
-        name: API.Terminate,
-        query: null
+        name: API.Terminate
       });
     };
     /**
-     * execute the transaction
+     * execute transaction
      *
+     * @template T
      * @param {TranscationQuery} query
      * @returns
-     * @memberof Instance
+     * @memberof Connection
      */
 
 
     Connection.prototype.transaction = function (query) {
-      if (Config.isRuningInWorker === true) {
-        query.logic = query.logic.toString();
-      }
-
       return this.pushApi({
         name: API.Transaction,
         query: query
       });
-    };
-    /**
-     * run sql code
-     *
-     * @param {(string | object)} query
-     * @returns {Promise<any>}
-     * @memberof Instance
-     */
-
-
-    Connection.prototype.runSql = function (query) {
-      var result = Util.sqlWeb.parseSql(query);
-      return this[result.api](result.data);
     };
 
     Connection.prototype.on = function (event, eventCallBack) {
@@ -1025,16 +976,25 @@ function (module, __webpack_exports__, __webpack_require__) {
       });
     };
 
-    Connection.prototype.off = function (event) {
+    Connection.prototype.off = function (event, eventCallBack) {
       var _this = this;
 
-      var indexes = this.eventQueue.map(function (ev, i) {
+      if (eventCallBack) {
+        var index = this.eventQueue.findIndex(function (q) {
+          return q.event === event;
+        });
+        this.eventQueue.splice(index, 0);
+        return;
+      }
+
+      var indexes = [];
+      this.eventQueue.forEach(function (ev, i) {
         if (ev.event === event) {
-          return i;
+          indexes.push(i);
         }
       });
       indexes.forEach(function (i) {
-        _this.eventQueue.splice(i, 0);
+        _this.eventQueue.splice(i, 1);
       });
     };
 
@@ -1045,78 +1005,54 @@ function (module, __webpack_exports__, __webpack_require__) {
       });
     };
 
-    return Connection;
-  }(connection_helper_ConnectionHelper); // CONCATENATED MODULE: ./src/main/instance.ts
-
-
-  var instance_Instance =
-  /** @class */
-  function () {
-    return function (worker) {
-      console.warn('Instance is obsolete, please use Connection. Refer - https://jsstore.net/tutorial/connection/');
-      return new connection_Connection(worker);
+    Connection.prototype.intersect = function (query) {
+      return this.pushApi({
+        name: API.Intersect,
+        query: query
+      });
     };
-  }(); // CONCATENATED MODULE: ./src/main/helper.ts
 
-  /**
-   * Enable log
-   *
-   */
+    Connection.prototype.addPlugin = function (plugin, params) {
+      plugin.setup(this, params);
+    };
+
+    Connection.prototype.addMiddleware = function (middleware) {
+      this.middlewares.push(middleware);
+    };
+    /**
+     * import scripts in jsstore web worker.
+     * Scripts method can be called using transaction api.
+     *
+     * @param {...string[]} urls
+     * @returns
+     * @memberof Connection
+     */
 
 
-  var enableLog = function () {
-    Config.isLogEnabled = true;
-  }; // CONCATENATED MODULE: ./src/main/global.ts
+    Connection.prototype.importScripts = function () {
+      var urls = [];
 
-  /**
-   *
-   * supply sqlweb
-   * @param {*} value
-   */
+      for (var _i = 0; _i < arguments.length; _i++) {
+        urls[_i] = arguments[_i];
+      }
+
+      return this.pushApi({
+        name: API.ImportScripts,
+        query: urls
+      });
+    };
+
+    return Connection;
+  }(connection_helper_ConnectionHelper); // CONCATENATED MODULE: ./src/main/worker_plugin.ts
 
 
-  var useSqlWeb = function (value) {
-    Util.sqlWeb = value;
+  var workerInjector = {
+    setup: function (connection, param) {
+      connection['$worker'] = param;
+    }
   }; // CONCATENATED MODULE: ./src/main/index.ts
 
-  /* concated harmony reexport Instance */
-
-
-  __webpack_require__.d(__webpack_exports__, "Instance", function () {
-    return instance_Instance;
-  });
-  /* concated harmony reexport Connection */
-
-
-  __webpack_require__.d(__webpack_exports__, "Connection", function () {
-    return connection_Connection;
-  });
-  /* concated harmony reexport Config */
-
-
-  __webpack_require__.d(__webpack_exports__, "Config", function () {
-    return Config;
-  });
-  /* concated harmony reexport enableLog */
-
-
-  __webpack_require__.d(__webpack_exports__, "enableLog", function () {
-    return enableLog;
-  });
-  /* concated harmony reexport useSqlWeb */
-
-
-  __webpack_require__.d(__webpack_exports__, "useSqlWeb", function () {
-    return useSqlWeb;
-  });
-  /* concated harmony reexport DATA_TYPE */
-
-
-  __webpack_require__.d(__webpack_exports__, "DATA_TYPE", function () {
-    return DATA_TYPE;
-  });
   /***/
-
 }
 /******/
 ]);
