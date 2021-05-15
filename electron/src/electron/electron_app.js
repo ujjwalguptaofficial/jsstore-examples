@@ -35,7 +35,9 @@ export class ElectronApp {
     }
 
     createWindow_() {
-        this.mainWindow_ = new electron.BrowserWindow();
+        this.mainWindow_ = new electron.BrowserWindow({
+            fullscreen: true
+        });
         this.mainWindow_.loadURL(url.format({
             pathname: path.join(__dirname, '../index.html'),
             protocol: 'file:'
@@ -43,7 +45,7 @@ export class ElectronApp {
         }))
 
         // Open the DevTools.
-        this.mainWindow_.webContents.openDevTools()
+        // this.mainWindow_.webContents.openDevTools()
 
         // Emitted when the window is closed.
         this.mainWindow_.on('closed', () => {
