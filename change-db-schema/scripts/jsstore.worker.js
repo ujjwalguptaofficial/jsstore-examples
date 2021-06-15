@@ -1,5 +1,5 @@
 /*!
- * @license :jsstore - V4.0.0 - 15/05/2021
+ * @license :jsstore - V4.2.1 - 14/06/2021
  * https://github.com/ujjwalguptaofficial/JsStore
  * Copyright (c) 2021 @Ujjwal Gupta; Licensed MIT
  */
@@ -249,7 +249,7 @@ function (modules) {
 
   /******/
 
-  return __webpack_require__(__webpack_require__.s = 3);
+  return __webpack_require__(__webpack_require__.s = 2);
   /******/
 }(
 /************************************************************************/
@@ -257,7 +257,7 @@ function (modules) {
 /******/
 {
   /***/
-  3:
+  2:
   /***/
   function (module, __webpack_exports__, __webpack_require__) {
     "use strict"; // ESM COMPAT FLAG
@@ -270,7 +270,17 @@ function (modules) {
         /* reexport */
         query_manager_QueryManager
       );
-    }); // CONCATENATED MODULE: ./src/common/enums.ts
+    }); // CONCATENATED MODULE: ./src/common/utils/promise_resolve.ts
+
+
+    var promiseResolve = function (value) {
+      return Promise.resolve(value);
+    }; // CONCATENATED MODULE: ./src/common/utils/promise.ts
+
+
+    var promise = function (cb) {
+      return new Promise(cb);
+    }; // CONCATENATED MODULE: ./src/common/enums.ts
 
 
     var ERROR_TYPE;
@@ -304,6 +314,7 @@ function (modules) {
       ERROR_TYPE["ImportScriptsFailed"] = "import_scripts_failed";
       ERROR_TYPE["MethodNotExist"] = "method_not_exist";
       ERROR_TYPE["Unknown"] = "unknown";
+      ERROR_TYPE["InvalidMiddleware"] = "invalid_middleware";
     })(ERROR_TYPE || (ERROR_TYPE = {}));
 
     var WORKER_STATUS;
@@ -347,6 +358,7 @@ function (modules) {
       API["Union"] = "union";
       API["Intersect"] = "intersect";
       API["ImportScripts"] = "import_scripts";
+      API["Middleware"] = "middleware";
     })(API || (API = {}));
 
     var EVENT;
@@ -407,26 +419,13 @@ function (modules) {
       CONNECTION_STATUS["NotStarted"] = "not_started";
       CONNECTION_STATUS["UnableToStart"] = "unable_to_start";
       CONNECTION_STATUS["ClosedByJsStore"] = "closed_by_jsstore";
-    })(CONNECTION_STATUS || (CONNECTION_STATUS = {})); // CONCATENATED MODULE: ./src/common/utils/promise.ts
+    })(CONNECTION_STATUS || (CONNECTION_STATUS = {})); // CONCATENATED MODULE: ./src/worker/model/table_meta.ts
 
 
-    var promise = function (cb) {
-      return new Promise(cb);
-    }; // CONCATENATED MODULE: ./src/worker/enums/table_state.ts
-
-
-    var TABLE_STATE;
-
-    (function (TABLE_STATE) {
-      TABLE_STATE["Create"] = "create";
-      TABLE_STATE["Delete"] = "delete";
-    })(TABLE_STATE || (TABLE_STATE = {})); // CONCATENATED MODULE: ./src/worker/model/table_meta.ts
-
-
-    var table_meta_TableMeta =
+    var TableMeta =
     /** @class */
     function () {
-      function TableMeta(table, dbVersion) {
+      return function (table) {
         this.autoIncColumnValue = {};
         var columns = [];
 
@@ -448,20 +447,8 @@ function (modules) {
 
         this.columns = columns;
         this.name = table.name;
-        this.version = table.version || 1;
-
-        if (dbVersion > this.version) {
-          this.version = dbVersion;
-        }
-
-        this.setState_();
-      }
-
-      TableMeta.prototype.setState_ = function () {
-        this.state = TABLE_STATE.Create;
+        this.alter = table.alter || {};
       };
-
-      return TableMeta;
     }(); // CONCATENATED MODULE: ./src/worker/meta_helper.ts
 
 
@@ -536,6 +523,7 @@ function (modules) {
     function () {
       return function (db) {
         this.name = db.name;
+        this.version = db.version || 1;
         db.tables.push({
           name: meta_helper_MetaHelper.tableName,
           columns: {
@@ -548,176 +536,16 @@ function (modules) {
           }
         });
         this.tables = db.tables.map(function (table) {
-          return new table_meta_TableMeta(table, db.version);
+          return new TableMeta(table);
         });
-        this.version = db.version || 1;
       };
-    }(); // CONCATENATED MODULE: ./src/worker/idbutil/index.ts
+    }(); // CONCATENATED MODULE: ./src/common/utils/for_obj.ts
 
 
-    var idbutil_IDBUtil =
-    /** @class */
-    function () {
-      function IDBUtil(db) {
-        this.db = db;
+    var forObj = function (obj, cb) {
+      for (var key in obj) {
+        cb(key, obj[key]);
       }
-
-      IDBUtil.prototype.emptyTx = function () {
-        if (!this.tx) return;
-        this.tx.oncomplete = null;
-        this.tx.onabort = null;
-        this.tx.onerror = null;
-        this.tx = null;
-      };
-
-      IDBUtil.prototype.createTransaction = function (tables, mode) {
-        var _this = this;
-
-        if (mode === void 0) {
-          mode = IDB_MODE.ReadWrite;
-        }
-
-        this.tx = this.con.transaction(tables, mode);
-        return promise(function (res, rej) {
-          _this.tx.oncomplete = res;
-          _this.tx.onabort = res;
-          _this.tx.onerror = rej;
-        });
-      };
-
-      IDBUtil.prototype.keyRange = function (value, op) {
-        var keyRange;
-
-        switch (op) {
-          case QUERY_OPTION.Between:
-            keyRange = IDBKeyRange.bound(value.low, value.high, false, false);
-            break;
-
-          case QUERY_OPTION.GreaterThan:
-            keyRange = IDBKeyRange.lowerBound(value, true);
-            break;
-
-          case QUERY_OPTION.GreaterThanEqualTo:
-            keyRange = IDBKeyRange.lowerBound(value);
-            break;
-
-          case QUERY_OPTION.LessThan:
-            keyRange = IDBKeyRange.upperBound(value, true);
-            break;
-
-          case QUERY_OPTION.LessThanEqualTo:
-            keyRange = IDBKeyRange.upperBound(value);
-            break;
-
-          default:
-            keyRange = IDBKeyRange.only(value);
-            break;
-        }
-
-        return keyRange;
-      };
-
-      IDBUtil.prototype.objectStore = function (name) {
-        return this.tx.objectStore(name);
-      };
-
-      IDBUtil.prototype.abortTransaction = function () {
-        if (this.tx) {
-          this.tx.abort();
-        }
-      };
-
-      IDBUtil.prototype.close = function () {
-        var _this = this;
-
-        if (this.con) {
-          this.con.close();
-        } // wait for 100 ms before success
-
-
-        return promise(function (res) {
-          _this.con = null;
-          setTimeout(res, 100);
-        });
-      };
-
-      IDBUtil.prototype.initDb = function () {
-        var _this = this;
-
-        var db = this.db;
-        var isDbCreated = false;
-        return promise(function (res, rej) {
-          var dbOpenRequest = indexedDB.open(db.name, db.version);
-
-          dbOpenRequest.onsuccess = function () {
-            _this.con = dbOpenRequest.result;
-
-            _this.con.onversionchange = function (e) {
-              // if (e.newVersion === null) { // An attempt is made to delete the db
-              e.target.close(); // Manually close our connection to the db
-              // }
-            };
-
-            res(isDbCreated);
-          };
-
-          dbOpenRequest.onerror = function (e) {
-            console.error("error", e);
-            rej(e);
-          };
-
-          dbOpenRequest.onupgradeneeded = function (e) {
-            var upgradeConnection = e.target.result;
-            isDbCreated = true;
-
-            var createObjectStore = function (table) {
-              var option = table.primaryKey ? {
-                keyPath: table.primaryKey
-              } : {
-                autoIncrement: true
-              }; // Delete the old datastore.    
-
-              if (upgradeConnection.objectStoreNames.contains(table.name)) {
-                upgradeConnection.deleteObjectStore(table.name);
-              }
-
-              var store = upgradeConnection.createObjectStore(table.name, option);
-              table.columns.forEach(function (column) {
-                if (column.enableSearch) {
-                  var columnName = column.name;
-                  var options = column.primaryKey ? {
-                    unique: true
-                  } : {
-                    unique: column.unique
-                  };
-                  options['multiEntry'] = column.multiEntry;
-                  var keyPath = column.keyPath == null ? columnName : column.keyPath;
-                  store.createIndex(columnName, keyPath, options);
-                }
-              });
-            };
-
-            var createStates = [TABLE_STATE.Create, TABLE_STATE.Delete];
-            db.tables.forEach(function (table) {
-              if (createStates.indexOf(table.state) >= 0) {
-                createObjectStore(table);
-              }
-            });
-          };
-        });
-      };
-
-      return IDBUtil;
-    }(); // CONCATENATED MODULE: ./src/common/utils/promise_all.ts
-
-
-    var promiseAll = function (promises) {
-      return Promise.all(promises);
-    }; // CONCATENATED MODULE: ./src/worker/utils/promise_reject.ts
-
-
-    var promiseReject = function (value) {
-      return Promise.reject(value);
     }; // CONCATENATED MODULE: ./src/worker/utils/log_helper.ts
 
 
@@ -725,21 +553,19 @@ function (modules) {
     /** @class */
     function () {
       function LogHelper(type, info) {
-        if (info === void 0) {
-          info = null;
-        }
-
         this.type = type;
         this.info_ = info;
         this.message = this.getMsg_();
       }
 
-      LogHelper.prototype.throw = function () {
-        throw this.get();
+      LogHelper.prototype.log = function (msg) {
+        if (this.status) {
+          console.log(msg);
+        }
       };
 
-      LogHelper.prototype.log = function (msg) {
-        console.log(msg);
+      LogHelper.prototype.throw = function () {
+        throw this.get();
       };
 
       LogHelper.prototype.logError = function () {
@@ -844,6 +670,10 @@ function (modules) {
             errMsg = this.info_;
             break;
 
+          case ERROR_TYPE.InvalidMiddleware:
+            errMsg = "No function " + this.info_ + " is found.";
+            break;
+
           default:
             if (!this.type) {
               this.type = ERROR_TYPE.Unknown;
@@ -857,7 +687,222 @@ function (modules) {
       };
 
       return LogHelper;
-    }(); // CONCATENATED MODULE: ./src/worker/utils/get_error.ts
+    }(); // CONCATENATED MODULE: ./src/worker/idbutil/index.ts
+
+
+    var idbutil_IDBUtil =
+    /** @class */
+    function () {
+      function IDBUtil(db) {
+        this.logger = new log_helper_LogHelper(null);
+        this.db = db;
+      }
+
+      IDBUtil.prototype.emptyTx = function () {
+        if (!this.tx) return;
+        this.tx.oncomplete = null;
+        this.tx.onabort = null;
+        this.tx.onerror = null;
+        this.tx = null;
+      };
+
+      IDBUtil.prototype.createTransactionIfNotExist = function (tables, mode) {
+        if (!this.tx) {
+          this.createTransaction(tables, mode);
+        }
+      };
+
+      IDBUtil.prototype.createTransaction = function (tables, mode) {
+        var _this = this;
+
+        if (mode === void 0) {
+          mode = IDB_MODE.ReadWrite;
+        }
+
+        this.tx = this.con.transaction(tables, mode);
+        return promise(function (res, rej) {
+          _this.tx.oncomplete = res;
+          _this.tx.onabort = res;
+          _this.tx.onerror = rej;
+        });
+      };
+
+      IDBUtil.prototype.keyRange = function (value, op) {
+        var keyRange;
+
+        switch (op) {
+          case QUERY_OPTION.Between:
+            keyRange = IDBKeyRange.bound(value.low, value.high, false, false);
+            break;
+
+          case QUERY_OPTION.GreaterThan:
+            keyRange = IDBKeyRange.lowerBound(value, true);
+            break;
+
+          case QUERY_OPTION.GreaterThanEqualTo:
+            keyRange = IDBKeyRange.lowerBound(value);
+            break;
+
+          case QUERY_OPTION.LessThan:
+            keyRange = IDBKeyRange.upperBound(value, true);
+            break;
+
+          case QUERY_OPTION.LessThanEqualTo:
+            keyRange = IDBKeyRange.upperBound(value);
+            break;
+
+          default:
+            keyRange = IDBKeyRange.only(value);
+            break;
+        }
+
+        return keyRange;
+      };
+
+      IDBUtil.prototype.objectStore = function (name) {
+        return this.tx.objectStore(name);
+      };
+
+      IDBUtil.prototype.abortTransaction = function () {
+        if (this.tx) {
+          this.tx.abort();
+        }
+      };
+
+      IDBUtil.prototype.close = function () {
+        var _this = this;
+
+        if (this.con) {
+          this.con.close();
+        } // wait for 100 ms before success
+
+
+        return promise(function (res) {
+          _this.con = null;
+          setTimeout(res, 100);
+        });
+      };
+
+      IDBUtil.prototype.initDb = function () {
+        var _this = this;
+
+        var db = this.db;
+        var isDbCreated = false;
+        var version = db.version;
+        return promise(function (res, rej) {
+          var dbOpenRequest = indexedDB.open(db.name, version);
+
+          dbOpenRequest.onsuccess = function () {
+            _this.con = dbOpenRequest.result;
+
+            _this.con.onversionchange = function (e) {
+              // if (e.newVersion === null) { // An attempt is made to delete the db
+              e.target.close(); // Manually close our connection to the db
+              // }
+            }; // this.createTransaction(getKeys(dbDeleted));
+            // forObj(dbDeleted, (tableName, columns) => {
+            //     const objectStore = this.objectStore(tableName);
+            //     objectStore.getAll()
+            // })
+
+
+            res(isDbCreated);
+          };
+
+          dbOpenRequest.onerror = function (e) {
+            console.error("error", e);
+            rej(e);
+          };
+
+          dbOpenRequest.onupgradeneeded = function (e) {
+            var target = e.target;
+            var upgradeConnection = target.result;
+            isDbCreated = true;
+            var transaction = target.transaction;
+            var storeNames = upgradeConnection.objectStoreNames;
+
+            var createObjectStore = function (table) {
+              var option = table.primaryKey ? {
+                keyPath: table.primaryKey
+              } : {
+                autoIncrement: true
+              };
+              var store = upgradeConnection.createObjectStore(table.name, option);
+              table.columns.forEach(function (column) {
+                addColumn(store, column);
+              });
+            };
+
+            var addColumn = function (store, column) {
+              if (column.enableSearch) {
+                var columnName = column.name;
+                var options = column.primaryKey ? {
+                  unique: true
+                } : {
+                  unique: column.unique
+                };
+                options['multiEntry'] = column.multiEntry;
+                var keyPath = column.keyPath == null ? columnName : column.keyPath;
+                store.createIndex(columnName, keyPath, options);
+              }
+            };
+
+            var deleteColumn = function (store, table, columnName) {
+              var index = table.columns.findIndex(function (q) {
+                return q.name === columnName;
+              });
+
+              if (index >= 0) {
+                table.columns.splice(index, 1);
+                store.deleteIndex(columnName);
+              }
+            };
+
+            db.tables.forEach(function (table) {
+              if (!storeNames.contains(table.name)) {
+                createObjectStore(table);
+              }
+
+              var alterQuery = table.alter[version];
+              if (!alterQuery) return;
+              var store = transaction.objectStore(table.name);
+              forObj(alterQuery.add || {}, function (_, column) {
+                addColumn(store, column);
+                table.columns.push(column);
+              });
+              forObj(alterQuery.drop || {}, function (columnName) {
+                deleteColumn(store, table, columnName);
+              });
+              forObj(alterQuery.modify || {}, function (columnName, column) {
+                var shouldDelete = column.multiEntry || column.keyPath || column.unique;
+                var targetColumn = table.columns.find(function (q) {
+                  return q.name === columnName;
+                });
+                var newColumn = Object.assign(targetColumn, column);
+
+                if (shouldDelete) {
+                  deleteColumn(store, table, columnName);
+                  addColumn(store, newColumn);
+                  table.columns.push(newColumn);
+                }
+              });
+            });
+          };
+        });
+      };
+
+      return IDBUtil;
+    }(); // CONCATENATED MODULE: ./src/common/utils/promise_all.ts
+
+
+    var promiseAll = function (promises) {
+      return Promise.all(promises);
+    }; // CONCATENATED MODULE: ./src/worker/utils/promise_reject.ts
+
+
+    var promiseReject = function (value) {
+      return Promise.reject(value);
+    }; // CONCATENATED MODULE: ./src/worker/utils/get_error.ts
 
 
     var getError = function (e) {
@@ -978,13 +1023,25 @@ function (modules) {
         this.autoIncrementValue = autoIncValues;
       }
 
-      ValuesChecker.prototype.checkAndModifyValues = function (values) {
+      ValuesChecker.prototype.checkAndModifyValues = function (query) {
         var _this = this;
 
         var err;
-        values.every(function (item) {
+        this.query = query;
+        var values = query.values;
+        var ignoreIndexes = [];
+        values.every(function (item, index) {
           err = _this.checkAndModifyValue(item);
+
+          if (query.ignore && err) {
+            ignoreIndexes.push(index);
+            err = null;
+          }
+
           return err ? false : true;
+        });
+        ignoreIndexes.forEach(function (index) {
+          values.splice(index, 1);
         });
         return {
           err: err,
@@ -1038,7 +1095,11 @@ function (modules) {
             value[column.name] = column.default;
           }
 
-        return this.checkNotNullAndDataType_(column, value);
+        var query = this.query;
+
+        if (query.validation) {
+          return this.checkNotNullAndDataType_(column, value);
+        }
       };
 
       ValuesChecker.prototype.getError = function (error, details) {
@@ -1149,7 +1210,7 @@ function (modules) {
         });
       };
 
-      QueryHelper.prototype.isInsertQryValid_ = function (query) {
+      QueryHelper.prototype.isInsertQryValid = function (query) {
         var table = this.getTable_(query.into);
         var log;
 
@@ -1281,21 +1342,19 @@ function (modules) {
       };
 
       QueryHelper.prototype.checkInsertQuery = function (query) {
-        var validResult = this.isInsertQryValid_(query);
+        var validResult = this.isInsertQryValid(query);
         var table = validResult.table;
-        var err = validResult.log;
-        if (err) return err;
+        var error = validResult.log;
+        if (error) return error;
+        if (query.skipDataCheck) return;
+        var valueCheckerInstance = new values_checker_ValuesChecker(table, table.autoIncColumnValue);
 
-        if (query.skipDataCheck) {} else {
-          var valueCheckerInstance = new values_checker_ValuesChecker(table, table.autoIncColumnValue);
+        var _a = valueCheckerInstance.checkAndModifyValues(query),
+            values = _a.values,
+            err = _a.err;
 
-          var _a = valueCheckerInstance.checkAndModifyValues(query.values),
-              values = _a.values,
-              err_1 = _a.err;
-
-          query.values = values;
-          return err_1;
-        }
+        query.values = values;
+        return err;
       };
 
       return QueryHelper;
@@ -1336,6 +1395,11 @@ function (modules) {
         var _this = _super.call(this) || this;
 
         _this.valuesAffected_ = [];
+
+        if (query.validation == null) {
+          query.validation = true;
+        }
+
         _this.query = query;
         _this.util = util;
         _this.tableName = query.into;
@@ -1359,11 +1423,11 @@ function (modules) {
       Insert.prototype.insertData_ = function (db) {
         var _this = this;
 
-        var objectStore;
         var onInsertData;
         var addMethod;
+        var query = this.query;
 
-        if (this.query.return) {
+        if (query.return) {
           onInsertData = function (value) {
             _this.valuesAffected_.push(value);
           };
@@ -1373,25 +1437,39 @@ function (modules) {
           };
         }
 
-        if (this.query.upsert) {
-          addMethod = function (value) {
-            return objectStore.put(value);
-          };
-        } else {
-          addMethod = function (value) {
-            return objectStore.add(value);
-          };
-        }
+        addMethod = function () {
+          var idbMethod = query.upsert ? "put" : "add";
 
-        if (!this.isTxQuery) {
-          this.util.createTransaction([this.query.into, meta_helper_MetaHelper.tableName]);
-        }
+          if (query.ignore && !_this.isTxQuery) {
+            return function (value) {
+              var tx = _this.util.con.transaction(query.into, IDB_MODE.ReadWrite);
 
-        objectStore = this.util.objectStore(this.tableName);
-        return promiseAll(this.query.values.map(function (value) {
+              var objectStore = tx.objectStore(query.into);
+              return objectStore[idbMethod](value);
+            };
+          }
+
+          if (!_this.isTxQuery) {
+            _this.util.createTransaction([query.into, meta_helper_MetaHelper.tableName]);
+          }
+
+          _this.objectStore = _this.util.objectStore(_this.tableName);
+          return function (value) {
+            return _this.objectStore[idbMethod](value);
+          };
+        }();
+
+        return promiseAll(query.values.map(function (value) {
           return promise(function (res, rej) {
             var addResult = addMethod(value);
-            addResult.onerror = rej;
+
+            addResult.onerror = function (err) {
+              if (query.ignore) {
+                res();
+              } else {
+                rej(err);
+              }
+            };
 
             addResult.onsuccess = function () {
               onInsertData(value);
@@ -1455,64 +1533,9 @@ function (modules) {
         return key;
       }
     }; // CONCATENATED MODULE: ./src/worker/executors/select/base_select.ts
-    // declare module "./index" {
-    //     interface Select {
-    //         methodY(): void;
-    //     }
-    // }
 
 
-    var setPushResult = function () {
-      var _this = this;
-
-      if (this.query.case) {
-        this.pushResult = function (value) {
-          _this.thenEvaluator.setCaseAndValue(_this.query.case, value);
-
-          for (var columnName in _this.query.case) {
-            value[columnName] = _this.thenEvaluator.setColumn(columnName).evaluate();
-          }
-
-          _this.results.push(value);
-        };
-      } else {
-        this.pushResult = function (value) {
-          _this.results.push(value);
-        };
-      }
-    };
-
-    var setLimitAndSkipEvaluationAtEnd = function () {
-      if (this.query.limit) {
-        this.shouldEvaluateLimitAtEnd = true;
-      }
-
-      if (this.query.skip) {
-        this.shouldEvaluateSkipAtEnd = true;
-      }
-    };
-
-    var removeDuplicates = function () {
-      var datas = this.results; // free results memory
-
-      this.results = null;
-      var key = this.primaryKey();
-      var lookupObject = {};
-
-      for (var i = 0, len = datas.length; i < len; i++) {
-        lookupObject[datas[i][key]] = datas[i];
-      }
-
-      datas = [];
-
-      for (var i in lookupObject) {
-        datas.push(lookupObject[i]);
-      }
-
-      this.results = datas;
-    }; // CONCATENATED MODULE: ./src/worker/executors/select/then_evaluator.ts
-
-
+    // CONCATENATED MODULE: ./src/worker/executors/select/then_evaluator.ts
     var then_evaluator_ThenEvaluator =
     /** @class */
     function () {
@@ -1738,32 +1761,6 @@ function (modules) {
       return value.replace(/\s/g, '');
     }; // CONCATENATED MODULE: ./src/worker/executors/select/order_by.ts
 
-
-    var processGroupDistinctAggr = function () {
-      if (this.query.distinct) {
-        var groupBy = [];
-        var result = this.results[0];
-
-        for (var key in result) {
-          groupBy.push(key);
-        }
-
-        var primaryKey = this.primaryKey(),
-            index = groupBy.indexOf(primaryKey);
-        groupBy.splice(index, 1);
-        this.query.groupBy = groupBy.length > 0 ? groupBy : null;
-      }
-
-      if (this.query.groupBy) {
-        if (this.query.aggregate) {
-          this.executeAggregateGroupBy();
-        } else {
-          this.processGroupBy();
-        }
-      } else if (this.query.aggregate) {
-        this.processAggregateQry();
-      }
-    };
 
     var getOrderColumnInfo = function (orderColumn) {
       var column;
@@ -2316,32 +2313,6 @@ function (modules) {
     }; // CONCATENATED MODULE: ./src/worker/executors/select/where.ts
 
 
-    var executeWhereLogic = function (column, value, op, dir) {
-      var _this = this;
-
-      value = op ? value[op] : value;
-      var cursorRequest = this.objectStore.index(column).openCursor(this.util.keyRange(value, op), dir);
-
-      var onSuccess = function () {
-        if (_this.shouldEvaluateLimitAtEnd === false && _this.shouldEvaluateSkipAtEnd === false) {
-          if (_this.skipRecord && _this.limitRecord) {
-            return executeSkipAndLimitForWhere_;
-          } else if (_this.skipRecord) {
-            return executeSkipForWhere_;
-          } else if (_this.limitRecord) {
-            return executeLimitForWhere_;
-          }
-        }
-
-        return executeSimpleForWhere_;
-      }();
-
-      return promise(function (res, rej) {
-        cursorRequest.onerror = rej;
-        cursorRequest.onsuccess = onSuccess.call(_this, res);
-      });
-    };
-
     var executeSkipAndLimitForWhere_ = function (onFinish) {
       var _this = this;
 
@@ -2718,46 +2689,6 @@ function (modules) {
     }(base_Base); // CONCATENATED MODULE: ./src/worker/executors/select/in.ts
 
 
-    var executeInLogic = function (column, values) {
-      var _this = this;
-
-      var skip = this.skipRecord;
-
-      var skipOrPush = function (val) {
-        if (skip === 0) {
-          _this.pushResult(val);
-        } else {
-          --skip;
-        }
-      };
-
-      var onSuccess = function () {
-        if (_this.shouldEvaluateLimitAtEnd === false && _this.shouldEvaluateSkipAtEnd === false) {
-          if (_this.skipRecord && _this.limitRecord) {
-            return executeSkipAndLimitForIn_;
-          } else if (_this.skipRecord) {
-            return executeSkipForIn_;
-          } else if (_this.limitRecord) {}
-        }
-
-        return executeSimpleForIn_;
-      }();
-
-      var columnStore = this.objectStore.index(column);
-
-      var runInLogic = function (value) {
-        return promise(function (res, rej) {
-          var cursorRequest = columnStore.openCursor(_this.util.keyRange(value));
-          cursorRequest.onsuccess = onSuccess.call(_this, res, skipOrPush);
-          cursorRequest.onerror = rej;
-        });
-      };
-
-      return promiseAll(values.map(function (val) {
-        return runInLogic(val);
-      }));
-    };
-
     var executeSkipAndLimitForIn_ = function (onFinish, skipOrPush) {
       var _this = this;
 
@@ -2838,45 +2769,6 @@ function (modules) {
       };
     }; // CONCATENATED MODULE: ./src/worker/executors/select/regex.ts
 
-
-    var executeRegexLogic = function (column, exp) {
-      var _this = this;
-
-      var skip = this.skipRecord;
-
-      var skipOrPush = function (val) {
-        if (skip === 0) {
-          _this.pushResult(val);
-        } else {
-          --skip;
-        }
-      };
-
-      this.shouldAddValue = function (cursor) {
-        return exp.test(cursor.key) && _this.whereCheckerInstance.check(cursor.value);
-      };
-
-      var cursorRequest = this.objectStore.index(column).openCursor();
-
-      var onSuccess = function () {
-        if (_this.shouldEvaluateLimitAtEnd === false && _this.shouldEvaluateSkipAtEnd === false) {
-          if (_this.skipRecord && _this.limitRecord) {
-            return executeSkipAndLimitForRegex_;
-          } else if (_this.skipRecord) {
-            return executeSkipForRegex_;
-          } else if (_this.limitRecord) {
-            return executeLimitForRegex_;
-          }
-        }
-
-        return executeSimpleForRegex_;
-      }();
-
-      return promise(function (res, rej) {
-        cursorRequest.onerror = rej;
-        cursorRequest.onsuccess = onSuccess.call(_this, res, skipOrPush);
-      });
-    };
 
     var executeSkipAndLimitForRegex_ = function (onFinish, skipOrPush) {
       var _this = this;
@@ -2965,13 +2857,6 @@ function (modules) {
       return __assign.apply(this, arguments);
     };
 
-    var executeJoinQuery = function () {
-      var _this = this;
-
-      var p = new join_Join(this).execute();
-      return p.then(function (results) {});
-    };
-
     var join_Join =
     /** @class */
     function () {
@@ -2996,22 +2881,44 @@ function (modules) {
       };
 
       Join.prototype.executeSelect = function (query) {
+        // this.select.util.emptyTx();
         return new select_Select(query, this.select.util).execute(this.select.db);
       };
 
       Join.prototype.execute = function () {
         var _this = this;
 
-        var query = this.select.query;
-
-        if (getDataType(query.join) === DATA_TYPE.Object) {
-          this.joinQueryStack_ = [query.join];
-        } else {
-          this.joinQueryStack_ = query.join;
-        } // get the data for first table
-
+        var query = this.query;
+        this.joinQueryStack_ = getDataType(query.join) === DATA_TYPE.Object ? [query.join] : query.join; // get the data for first table
 
         var tableName = query.from;
+        var tablesToFetch = [tableName];
+
+        for (var i = 0, length_1 = this.joinQueryStack_.length; i < length_1; i++) {
+          var item = this.joinQueryStack_[i];
+          var jointblInfo = this.getJoinTableInfo_(item.on); // table 1 is fetched & table2 needs to be fetched for join
+
+          if (item.with === jointblInfo.table1.table) {
+            jointblInfo = {
+              table1: jointblInfo.table2,
+              table2: jointblInfo.table1
+            };
+          }
+
+          var err = this.checkJoinQuery_(jointblInfo, item);
+
+          if (err) {
+            return promiseReject(err);
+          }
+
+          this.joinQueryStack_[i].joinTableInfo = jointblInfo;
+          tablesToFetch.push(item.with);
+        }
+
+        if (!this.select.isTxQuery) {
+          this.select.util.createTransaction(tablesToFetch);
+        }
+
         return this.executeSelect({
           from: tableName,
           where: query.where,
@@ -3031,9 +2938,8 @@ function (modules) {
       };
 
       Join.prototype.onJoinQueryFinished_ = function () {
-        var _this = this;
+        var _this = this; // const query = this.query;
 
-        this.query;
 
         if (this.results.length > 0) {
           try {
@@ -3058,8 +2964,8 @@ function (modules) {
               var data = result["0"]; // first table data
 
               for (var i = 1; i < tablesLength_1; i++) {
-                var query_1 = _this.joinQueryStack_[i - 1];
-                data = __assign(__assign({}, data), mapWithAlias_1(query_1, result[i]));
+                var query = _this.joinQueryStack_[i - 1];
+                data = __assign(__assign({}, data), mapWithAlias_1(query, result[i]));
               }
 
               results_1.push(data);
@@ -3081,47 +2987,25 @@ function (modules) {
             }
           } catch (ex) {
             return promiseReject(new log_helper_LogHelper(ERROR_TYPE.InvalidJoinQuery, ex.message));
-          } // if (this.query.skip && this.query.limit) {
-          //     this.results.splice(0, this.query.skip);
-          //     this.results = this.results.slice(0, this.query.limit);
-          // }
-          // else if (this.query.limit) {
-          //     this.results = this.results.slice(0, this.query.limit);
-          // }
-
+          }
         }
       };
 
       Join.prototype.startExecutingJoinLogic_ = function () {
         var _this = this;
 
-        var query = this.joinQueryStack_[this.currentQueryStackIndex_];
+        var joinQuery = this.joinQueryStack_[this.currentQueryStackIndex_];
 
-        if (query) {
+        if (joinQuery) {
           try {
-            var jointblInfo_1 = this.getJoinTableInfo_(query.on); // table 1 is fetched & table2 needs to be fetched for join
-
-            if (query.with === jointblInfo_1.table1.table) {
-              jointblInfo_1 = {
-                table1: jointblInfo_1.table2,
-                table2: jointblInfo_1.table1
-              };
-            }
-
-            var err = this.checkJoinQuery_(jointblInfo_1, query);
-
-            if (err) {
-              return promiseReject(err);
-            } //return this.onJoinQueryFinished_();
-
-
+            var jointblInfo_1 = joinQuery.joinTableInfo;
             return this.executeSelect({
-              from: query.with,
-              where: query.where,
-              case: query.case,
-              flatten: query.flatten
+              from: joinQuery.with,
+              where: joinQuery.where,
+              case: joinQuery.case,
+              flatten: joinQuery.flatten
             }).then(function (results) {
-              _this.jointables(query.type, jointblInfo_1, results);
+              _this.jointables(joinQuery.type, jointblInfo_1, results);
 
               _this.tablesFetched.push(jointblInfo_1.table2.table);
 
@@ -3332,19 +3216,6 @@ function (modules) {
         _this.sorted = false;
         _this.isSubQuery = false;
         _this.thenEvaluator = new then_evaluator_ThenEvaluator();
-        _this.setLimitAndSkipEvaluationAtEnd_ = setLimitAndSkipEvaluationAtEnd;
-        _this.setPushResult = setPushResult;
-        _this.removeDuplicates = removeDuplicates;
-        _this.executeWhereUndefinedLogic = executeWhereUndefinedLogic;
-        _this.executeJoinQuery = executeJoinQuery;
-        _this.processGroupDistinctAggr = processGroupDistinctAggr;
-        _this.processOrderBy = processOrderBy;
-        _this.processAggregateQry = processAggregateQry;
-        _this.executeAggregateGroupBy = executeAggregateGroupBy;
-        _this.processGroupBy = processGroupBy;
-        _this.executeInLogic = executeInLogic;
-        _this.executeWhereLogic = executeWhereLogic;
-        _this.executeRegexLogic = executeRegexLogic;
 
         _this.returnResult_ = function () {
           if (_this.query.flatten) {
@@ -3421,18 +3292,16 @@ function (modules) {
         try {
           var err = new query_helper_QueryHelper(db).validate(API.Select, this.query);
           if (err) return promiseReject(err);
+          this.initTransaction_();
 
           if (this.query.join == null) {
             if (this.query.where != null) {
-              this.initTransaction_();
-
               if (isArray(this.query.where)) {
                 pResult = this.processWhereArrayQry();
               } else {
                 pResult = this.processWhere_();
               }
             } else {
-              this.initTransaction_();
               pResult = this.executeWhereUndefinedLogic();
             }
           } else {
@@ -3499,9 +3368,7 @@ function (modules) {
             _this.results = [];
             return processFirstQry();
           } else {
-            _this.results = output; // if (this.isSubQuery === true) {
-            // return this.returnResult_();
-            // }
+            _this.results = output;
           }
         };
 
@@ -3527,7 +3394,7 @@ function (modules) {
 
       Select.prototype.initTransaction_ = function () {
         if (!this.isTxQuery) {
-          this.util.createTransaction([this.tableName], IDB_MODE.ReadOnly);
+          this.util.createTransactionIfNotExist([this.tableName], IDB_MODE.ReadOnly);
         }
 
         this.objectStore = this.util.objectStore(this.tableName);
@@ -3594,10 +3461,300 @@ function (modules) {
       };
 
       return Select;
-    }(base_fetch_BaseFetch); // CONCATENATED MODULE: ./src/worker/executors/count/not_where.ts
+    }(base_fetch_BaseFetch);
 
+    select_Select.prototype.executeInLogic = function (column, values) {
+      var _this = this;
 
-    var not_where_executeWhereUndefinedLogic = function () {
+      var skip = this.skipRecord;
+
+      var skipOrPush = function (val) {
+        if (skip === 0) {
+          _this.pushResult(val);
+        } else {
+          --skip;
+        }
+      };
+
+      var onSuccess = function () {
+        if (_this.shouldEvaluateLimitAtEnd === false && _this.shouldEvaluateSkipAtEnd === false) {
+          if (_this.skipRecord && _this.limitRecord) {
+            return executeSkipAndLimitForIn_;
+          } else if (_this.skipRecord) {
+            return executeSkipForIn_;
+          } else if (_this.limitRecord) {}
+        }
+
+        return executeSimpleForIn_;
+      }();
+
+      var columnStore = this.objectStore.index(column);
+
+      var runInLogic = function (value) {
+        return promise(function (res, rej) {
+          var cursorRequest = columnStore.openCursor(_this.util.keyRange(value));
+          cursorRequest.onsuccess = onSuccess.call(_this, res, skipOrPush);
+          cursorRequest.onerror = rej;
+        });
+      };
+
+      return promiseAll(values.map(function (val) {
+        return runInLogic(val);
+      }));
+    };
+
+    select_Select.prototype.executeWhereUndefinedLogic = executeWhereUndefinedLogic;
+
+    select_Select.prototype.executeWhereLogic = function (column, value, op, dir) {
+      var _this = this;
+
+      value = op ? value[op] : value;
+      var cursorRequest = this.objectStore.index(column).openCursor(this.util.keyRange(value, op), dir);
+
+      var onSuccess = function () {
+        if (_this.shouldEvaluateLimitAtEnd === false && _this.shouldEvaluateSkipAtEnd === false) {
+          if (_this.skipRecord && _this.limitRecord) {
+            return executeSkipAndLimitForWhere_;
+          } else if (_this.skipRecord) {
+            return executeSkipForWhere_;
+          } else if (_this.limitRecord) {
+            return executeLimitForWhere_;
+          }
+        }
+
+        return executeSimpleForWhere_;
+      }();
+
+      return promise(function (res, rej) {
+        cursorRequest.onerror = rej;
+        cursorRequest.onsuccess = onSuccess.call(_this, res);
+      });
+    };
+
+    select_Select.prototype.executeRegexLogic = function (column, exp) {
+      var _this = this;
+
+      var skip = this.skipRecord;
+
+      var skipOrPush = function (val) {
+        if (skip === 0) {
+          _this.pushResult(val);
+        } else {
+          --skip;
+        }
+      };
+
+      this.shouldAddValue = function (cursor) {
+        return exp.test(cursor.key) && _this.whereCheckerInstance.check(cursor.value);
+      };
+
+      var cursorRequest = this.objectStore.index(column).openCursor();
+
+      var onSuccess = function () {
+        if (_this.shouldEvaluateLimitAtEnd === false && _this.shouldEvaluateSkipAtEnd === false) {
+          if (_this.skipRecord && _this.limitRecord) {
+            return executeSkipAndLimitForRegex_;
+          } else if (_this.skipRecord) {
+            return executeSkipForRegex_;
+          } else if (_this.limitRecord) {
+            return executeLimitForRegex_;
+          }
+        }
+
+        return executeSimpleForRegex_;
+      }();
+
+      return promise(function (res, rej) {
+        cursorRequest.onerror = rej;
+        cursorRequest.onsuccess = onSuccess.call(_this, res, skipOrPush);
+      });
+    };
+
+    select_Select.prototype.setLimitAndSkipEvaluationAtEnd_ = function () {
+      if (this.query.limit) {
+        this.shouldEvaluateLimitAtEnd = true;
+      }
+
+      if (this.query.skip) {
+        this.shouldEvaluateSkipAtEnd = true;
+      }
+    };
+
+    select_Select.prototype.setPushResult = function () {
+      var _this = this;
+
+      if (this.query.case) {
+        this.pushResult = function (value) {
+          _this.thenEvaluator.setCaseAndValue(_this.query.case, value);
+
+          for (var columnName in _this.query.case) {
+            value[columnName] = _this.thenEvaluator.setColumn(columnName).evaluate();
+          }
+
+          _this.results.push(value);
+        };
+      } else {
+        this.pushResult = function (value) {
+          _this.results.push(value);
+        };
+      }
+    };
+
+    select_Select.prototype.removeDuplicates = function () {
+      var datas = this.results; // free results memory
+
+      this.results = null;
+      var key = this.primaryKey();
+      var lookupObject = {};
+
+      for (var i = 0, len = datas.length; i < len; i++) {
+        lookupObject[datas[i][key]] = datas[i];
+      }
+
+      datas = [];
+
+      for (var i in lookupObject) {
+        datas.push(lookupObject[i]);
+      }
+
+      this.results = datas;
+    };
+
+    select_Select.prototype.executeJoinQuery = function () {
+      return new join_Join(this).execute();
+    };
+
+    select_Select.prototype.processGroupDistinctAggr = function () {
+      if (this.query.distinct) {
+        var groupBy = [];
+        var result = this.results[0];
+
+        for (var key in result) {
+          groupBy.push(key);
+        }
+
+        var primaryKey = this.primaryKey(),
+            index = groupBy.indexOf(primaryKey);
+        groupBy.splice(index, 1);
+        this.query.groupBy = groupBy.length > 0 ? groupBy : null;
+      }
+
+      if (this.query.groupBy) {
+        if (this.query.aggregate) {
+          this.executeAggregateGroupBy();
+        } else {
+          this.processGroupBy();
+        }
+      } else if (this.query.aggregate) {
+        this.processAggregateQry();
+      }
+    };
+
+    select_Select.prototype.processOrderBy = processOrderBy;
+    select_Select.prototype.processAggregateQry = processAggregateQry;
+    select_Select.prototype.executeAggregateGroupBy = executeAggregateGroupBy;
+    select_Select.prototype.processGroupBy = processGroupBy; // CONCATENATED MODULE: ./src/worker/executors/count/not_where.ts
+
+    // CONCATENATED MODULE: ./src/worker/executors/count/index.ts
+    var count_extends = undefined && undefined.__extends || function () {
+      var extendStatics = function (d, b) {
+        extendStatics = Object.setPrototypeOf || {
+          __proto__: []
+        } instanceof Array && function (d, b) {
+          d.__proto__ = b;
+        } || function (d, b) {
+          for (var p in b) if (Object.prototype.hasOwnProperty.call(b, p)) d[p] = b[p];
+        };
+
+        return extendStatics(d, b);
+      };
+
+      return function (d, b) {
+        if (typeof b !== "function" && b !== null) throw new TypeError("Class extends value " + String(b) + " is not a constructor or null");
+        extendStatics(d, b);
+
+        function __() {
+          this.constructor = d;
+        }
+
+        d.prototype = b === null ? Object.create(b) : (__.prototype = b.prototype, new __());
+      };
+    }();
+
+    var count_Count =
+    /** @class */
+    function (_super) {
+      count_extends(Count, _super);
+
+      function Count(query, util) {
+        var _this = _super.call(this) || this;
+
+        _this.resultCount = 0;
+        _this.query = query;
+        _this.util = util;
+        _this.tableName = query.from;
+        return _this;
+      }
+
+      Count.prototype.execute = function (db) {
+        var _this = this;
+
+        this.db = db;
+        var queryHelper = new query_helper_QueryHelper(db);
+        var query = this.query;
+        var err = queryHelper.validate(API.Count, query);
+
+        if (err) {
+          return promiseReject(err);
+        }
+
+        try {
+          var result = void 0;
+
+          var getDataFromSelect = function () {
+            var selectInstance = new select_Select(_this.query, _this.util);
+            selectInstance.isTxQuery = _this.isTxQuery;
+            return selectInstance.execute(db).then(function (results) {
+              _this.resultCount = results.length;
+            });
+          };
+
+          this.initTransaction_();
+
+          if (query.join == null) {
+            if (query.where != null) {
+              if (query.where.or || isArray(this.query.where)) {
+                result = getDataFromSelect();
+              } else {
+                result = this.goToWhereLogic();
+              }
+            } else {
+              result = this.executeWhereUndefinedLogic();
+            }
+          } else {
+            result = getDataFromSelect();
+          }
+
+          return result.then(function () {
+            return _this.resultCount;
+          });
+        } catch (ex) {
+          this.onException(ex);
+        }
+      };
+
+      Count.prototype.initTransaction_ = function () {
+        if (!this.isTxQuery) {
+          this.util.createTransaction([this.query.from], IDB_MODE.ReadOnly);
+        }
+
+        this.objectStore = this.util.objectStore(this.query.from);
+      };
+
+      return Count;
+    }(base_fetch_BaseFetch);
+
+    count_Count.prototype.executeWhereUndefinedLogic = function () {
       var _this = this;
 
       var countRequest;
@@ -3633,10 +3790,9 @@ function (modules) {
         countRequest.onerror = rej;
         countRequest.onsuccess = onSuccess(res);
       });
-    }; // CONCATENATED MODULE: ./src/worker/executors/count/where.ts
+    };
 
-
-    var where_executeWhereLogic = function (column, value, op) {
+    count_Count.prototype.executeWhereLogic = function (column, value, op) {
       var _this = this;
 
       value = op ? value[op] : value;
@@ -3670,10 +3826,9 @@ function (modules) {
 
         cursorRequest.onerror = rej;
       });
-    }; // CONCATENATED MODULE: ./src/worker/executors/count/regex.ts
+    };
 
-
-    var regex_executeRegexLogic = function (column, exp) {
+    count_Count.prototype.executeRegexLogic = function (column, exp) {
       var _this = this;
 
       var cursor;
@@ -3700,10 +3855,9 @@ function (modules) {
           }
         };
       });
-    }; // CONCATENATED MODULE: ./src/worker/executors/count/in.ts
+    };
 
-
-    var in_executeInLogic = function (column, values) {
+    count_Count.prototype.executeInLogic = function (column, values) {
       var _this = this;
 
       var cursor;
@@ -3749,110 +3903,7 @@ function (modules) {
       return promiseAll(values.map(function (val) {
         return runInLogic(val);
       }));
-    }; // CONCATENATED MODULE: ./src/worker/executors/count/index.ts
-
-
-    var count_extends = undefined && undefined.__extends || function () {
-      var extendStatics = function (d, b) {
-        extendStatics = Object.setPrototypeOf || {
-          __proto__: []
-        } instanceof Array && function (d, b) {
-          d.__proto__ = b;
-        } || function (d, b) {
-          for (var p in b) if (Object.prototype.hasOwnProperty.call(b, p)) d[p] = b[p];
-        };
-
-        return extendStatics(d, b);
-      };
-
-      return function (d, b) {
-        if (typeof b !== "function" && b !== null) throw new TypeError("Class extends value " + String(b) + " is not a constructor or null");
-        extendStatics(d, b);
-
-        function __() {
-          this.constructor = d;
-        }
-
-        d.prototype = b === null ? Object.create(b) : (__.prototype = b.prototype, new __());
-      };
-    }();
-
-    var count_Count =
-    /** @class */
-    function (_super) {
-      count_extends(Count, _super);
-
-      function Count(query, util) {
-        var _this = _super.call(this) || this;
-
-        _this.resultCount = 0;
-        _this.executeWhereUndefinedLogic = not_where_executeWhereUndefinedLogic;
-        _this.executeWhereLogic = where_executeWhereLogic;
-        _this.executeRegexLogic = regex_executeRegexLogic;
-        _this.executeInLogic = in_executeInLogic;
-        _this.query = query;
-        _this.util = util;
-        _this.tableName = query.from;
-        return _this;
-      }
-
-      Count.prototype.execute = function (db) {
-        var _this = this;
-
-        this.db = db;
-        var queryHelper = new query_helper_QueryHelper(db);
-        var query = this.query;
-        var err = queryHelper.validate(API.Count, query);
-
-        if (err) {
-          return promiseReject(err);
-        }
-
-        try {
-          var result = void 0;
-
-          var getDataFromSelect = function () {
-            var selectInstance = new select_Select(_this.query, _this.util);
-            selectInstance.isTxQuery = _this.isTxQuery;
-            return selectInstance.execute(db).then(function (results) {
-              _this.resultCount = results.length;
-            });
-          };
-
-          if (query.join == null) {
-            if (query.where != null) {
-              if (query.where.or || isArray(this.query.where)) {
-                result = getDataFromSelect();
-              } else {
-                this.initTransaction_();
-                result = this.goToWhereLogic();
-              }
-            } else {
-              this.initTransaction_();
-              result = this.executeWhereUndefinedLogic();
-            }
-          } else {
-            result = getDataFromSelect();
-          }
-
-          return result.then(function () {
-            return _this.resultCount;
-          });
-        } catch (ex) {
-          this.onException(ex);
-        }
-      };
-
-      Count.prototype.initTransaction_ = function () {
-        if (!this.isTxQuery) {
-          this.util.createTransaction([this.query.from], IDB_MODE.ReadOnly);
-        }
-
-        this.objectStore = this.util.objectStore(this.query.from);
-      };
-
-      return Count;
-    }(base_fetch_BaseFetch); // CONCATENATED MODULE: ./src/worker/executors/update/update_value.ts
+    }; // CONCATENATED MODULE: ./src/worker/executors/update/update_value.ts
 
 
     var updateValue = function (suppliedValue, storedValue) {
@@ -3895,164 +3946,7 @@ function (modules) {
     }; // CONCATENATED MODULE: ./src/worker/executors/update/not_where.ts
 
 
-    var update_not_where_executeWhereUndefinedLogic = function () {
-      var _this = this;
-
-      var cursorRequest = this.objectStore.openCursor();
-      var setValue = this.query.set;
-      return promise(function (res, rej) {
-        cursorRequest.onsuccess = function (e) {
-          var cursor = e.target.result;
-
-          if (cursor) {
-            try {
-              var cursorUpdateRequest = cursor.update(updateValue(setValue, cursor.value));
-
-              cursorUpdateRequest.onsuccess = function () {
-                ++_this.rowAffected;
-                cursor.continue();
-              };
-
-              cursorUpdateRequest.onerror = rej;
-            } catch (ex) {
-              rej(ex);
-            }
-          } else {
-            res();
-          }
-        };
-
-        cursorRequest.onerror = rej;
-      });
-    }; // CONCATENATED MODULE: ./src/worker/executors/update/in.ts
-
-
-    var update_in_executeInLogic = function (column, values) {
-      var _this = this;
-
-      var columnStore = this.objectStore.index(column);
-      var query = this.query;
-
-      var runInLogic = function (value) {
-        return promise(function (res, rej) {
-          var cursorRequest = columnStore.openCursor(_this.util.keyRange(value));
-
-          cursorRequest.onsuccess = function (e) {
-            var cursor = e.target.result;
-
-            if (cursor) {
-              var value_1 = cursor.value;
-
-              if (_this.whereCheckerInstance.check(value_1)) {
-                try {
-                  var cursorUpdateRequest = cursor.update(updateValue(query.set, value_1));
-
-                  cursorUpdateRequest.onsuccess = function () {
-                    ++_this.rowAffected;
-                    cursor.continue();
-                  };
-
-                  cursorUpdateRequest.onerror = rej;
-                } catch (ex) {
-                  rej(ex);
-                }
-              } else {
-                cursor.continue();
-              }
-            } else {
-              res();
-            }
-          };
-
-          cursorRequest.onerror = rej;
-        });
-      };
-
-      return promiseAll(values.map(function (val) {
-        return runInLogic(val);
-      }));
-    }; // CONCATENATED MODULE: ./src/worker/executors/update/regex.ts
-
-
-    var update_regex_executeRegexLogic = function (column, exp) {
-      var _this = this;
-
-      var cursor;
-      var cursorOpenRequest = this.objectStore.index(column).openCursor();
-
-      this.shouldAddValue = function (cursor) {
-        return exp.test(cursor.key) && _this.whereCheckerInstance.check(cursor.value);
-      };
-
-      var setValue = this.query.set;
-      return promise(function (res, rej) {
-        cursorOpenRequest.onsuccess = function (e) {
-          cursor = e.target.result;
-
-          if (cursor) {
-            if (_this.shouldAddValue(cursor)) {
-              try {
-                var cursorUpdateRequest = cursor.update(updateValue(setValue, cursor.value));
-
-                cursorUpdateRequest.onsuccess = function () {
-                  ++_this.rowAffected;
-                  cursor.continue();
-                };
-
-                cursorUpdateRequest.onerror = rej;
-              } catch (ex) {
-                rej(ex);
-              }
-            } else {
-              cursor.continue();
-            }
-          } else {
-            res();
-          }
-        };
-
-        cursorOpenRequest.onerror = rej;
-      });
-    }; // CONCATENATED MODULE: ./src/worker/executors/update/where.ts
-
-
-    var update_where_executeWhereLogic = function (column, value, op) {
-      var _this = this;
-
-      value = op ? value[op] : value;
-      var cursorRequest = this.objectStore.index(column).openCursor(this.util.keyRange(value, op));
-      var setValue = this.query.set;
-      return promise(function (res, rej) {
-        cursorRequest.onsuccess = function (e) {
-          var cursor = e.target.result;
-
-          if (cursor) {
-            if (_this.whereCheckerInstance.check(cursor.value)) {
-              try {
-                var cursorUpdateRequest = cursor.update(updateValue(setValue, cursor.value));
-
-                cursorUpdateRequest.onsuccess = function () {
-                  ++_this.rowAffected;
-                  cursor.continue();
-                };
-
-                cursorUpdateRequest.onerror = rej;
-              } catch (ex) {
-                rej(ex);
-              }
-            } else {
-              cursor.continue();
-            }
-          } else {
-            res();
-          }
-        };
-
-        cursorRequest.onerror = rej;
-      });
-    }; // CONCATENATED MODULE: ./src/worker/executors/update/index.ts
-
-
+    // CONCATENATED MODULE: ./src/worker/executors/update/index.ts
     var update_extends = undefined && undefined.__extends || function () {
       var extendStatics = function (d, b) {
         extendStatics = Object.setPrototypeOf || {
@@ -4086,10 +3980,6 @@ function (modules) {
       function Update(query, util) {
         var _this = _super.call(this) || this;
 
-        _this.executeWhereUndefinedLogic = update_not_where_executeWhereUndefinedLogic;
-        _this.executeInLogic = update_in_executeInLogic;
-        _this.executeRegexLogic = update_regex_executeRegexLogic;
-        _this.executeWhereLogic = update_where_executeWhereLogic;
         _this.query = query;
         _this.util = util;
         _this.tableName = query.in;
@@ -4167,7 +4057,161 @@ function (modules) {
       };
 
       return Update;
-    }(base_fetch_BaseFetch); // CONCATENATED MODULE: ./src/worker/intersect/index.ts
+    }(base_fetch_BaseFetch);
+
+    update_Update.prototype.executeWhereUndefinedLogic = function () {
+      var _this = this;
+
+      var cursorRequest = this.objectStore.openCursor();
+      var setValue = this.query.set;
+      return promise(function (res, rej) {
+        cursorRequest.onsuccess = function (e) {
+          var cursor = e.target.result;
+
+          if (cursor) {
+            try {
+              var cursorUpdateRequest = cursor.update(updateValue(setValue, cursor.value));
+
+              cursorUpdateRequest.onsuccess = function () {
+                ++_this.rowAffected;
+                cursor.continue();
+              };
+
+              cursorUpdateRequest.onerror = rej;
+            } catch (ex) {
+              rej(ex);
+            }
+          } else {
+            res();
+          }
+        };
+
+        cursorRequest.onerror = rej;
+      });
+    };
+
+    update_Update.prototype.executeWhereLogic = function (column, value, op) {
+      var _this = this;
+
+      value = op ? value[op] : value;
+      var cursorRequest = this.objectStore.index(column).openCursor(this.util.keyRange(value, op));
+      var setValue = this.query.set;
+      return promise(function (res, rej) {
+        cursorRequest.onsuccess = function (e) {
+          var cursor = e.target.result;
+
+          if (cursor) {
+            if (_this.whereCheckerInstance.check(cursor.value)) {
+              try {
+                var cursorUpdateRequest = cursor.update(updateValue(setValue, cursor.value));
+
+                cursorUpdateRequest.onsuccess = function () {
+                  ++_this.rowAffected;
+                  cursor.continue();
+                };
+
+                cursorUpdateRequest.onerror = rej;
+              } catch (ex) {
+                rej(ex);
+              }
+            } else {
+              cursor.continue();
+            }
+          } else {
+            res();
+          }
+        };
+
+        cursorRequest.onerror = rej;
+      });
+    };
+
+    update_Update.prototype.executeRegexLogic = function (column, exp) {
+      var _this = this;
+
+      var cursor;
+      var cursorOpenRequest = this.objectStore.index(column).openCursor();
+
+      this.shouldAddValue = function (cursor) {
+        return exp.test(cursor.key) && _this.whereCheckerInstance.check(cursor.value);
+      };
+
+      var setValue = this.query.set;
+      return promise(function (res, rej) {
+        cursorOpenRequest.onsuccess = function (e) {
+          cursor = e.target.result;
+
+          if (cursor) {
+            if (_this.shouldAddValue(cursor)) {
+              try {
+                var cursorUpdateRequest = cursor.update(updateValue(setValue, cursor.value));
+
+                cursorUpdateRequest.onsuccess = function () {
+                  ++_this.rowAffected;
+                  cursor.continue();
+                };
+
+                cursorUpdateRequest.onerror = rej;
+              } catch (ex) {
+                rej(ex);
+              }
+            } else {
+              cursor.continue();
+            }
+          } else {
+            res();
+          }
+        };
+
+        cursorOpenRequest.onerror = rej;
+      });
+    };
+
+    update_Update.prototype.executeInLogic = function (column, values) {
+      var _this = this;
+
+      var columnStore = this.objectStore.index(column);
+      var query = this.query;
+
+      var runInLogic = function (value) {
+        return promise(function (res, rej) {
+          var cursorRequest = columnStore.openCursor(_this.util.keyRange(value));
+
+          cursorRequest.onsuccess = function (e) {
+            var cursor = e.target.result;
+
+            if (cursor) {
+              var value_1 = cursor.value;
+
+              if (_this.whereCheckerInstance.check(value_1)) {
+                try {
+                  var cursorUpdateRequest = cursor.update(updateValue(query.set, value_1));
+
+                  cursorUpdateRequest.onsuccess = function () {
+                    ++_this.rowAffected;
+                    cursor.continue();
+                  };
+
+                  cursorUpdateRequest.onerror = rej;
+                } catch (ex) {
+                  rej(ex);
+                }
+              } else {
+                cursor.continue();
+              }
+            } else {
+              res();
+            }
+          };
+
+          cursorRequest.onerror = rej;
+        });
+      };
+
+      return promiseAll(values.map(function (val) {
+        return runInLogic(val);
+      }));
+    }; // CONCATENATED MODULE: ./src/worker/intersect/index.ts
 
 
     var intersect_extends = undefined && undefined.__extends || function () {
@@ -4654,9 +4698,11 @@ function (modules) {
     remove_Remove.prototype.executeInLogic = function (column, values) {
       var _this = this;
 
+      var columnIndex = this.objectStore.index(column);
+
       var runInLogic = function (value) {
         return promise(function (res, rej) {
-          var cursorRequest = _this.objectStore.index(column).openCursor(_this.util.keyRange(value));
+          var cursorRequest = columnIndex.openCursor(_this.util.keyRange(value));
 
           cursorRequest.onsuccess = function (e) {
             var cursor = e.target.result;
@@ -4834,7 +4880,15 @@ function (modules) {
       };
 
       return Clear;
-    }(base_Base); // CONCATENATED MODULE: ./src/worker/executors/transaction/index.ts
+    }(base_Base); // CONCATENATED MODULE: ./src/worker/utils/resolve.ts
+
+
+    var variableFromPath = function (path) {
+      var properties = isArray(path) ? path : path.split(".");
+      return properties.reduce(function (prev, curr) {
+        return prev && prev[curr];
+      }, self);
+    }; // CONCATENATED MODULE: ./src/worker/executors/transaction/index.ts
 
 
     var transaction_extends = undefined && undefined.__extends || function () {
@@ -4890,7 +4944,8 @@ function (modules) {
           _this.onSuccess = res;
           _this.onError = rej;
         }).then(function (result) {
-          console.log("transaction finished");
+          _this.log("transaction finished");
+
           return result;
         });
       };
@@ -4906,7 +4961,7 @@ function (modules) {
         }
 
         var methodName = query.method;
-        var txLogic = self[methodName];
+        var txLogic = variableFromPath(methodName);
 
         if (!txLogic) {
           return new log_helper_LogHelper(ERROR_TYPE.MethodNotExist, methodName);
@@ -4954,8 +5009,8 @@ function (modules) {
         };
 
         var methodName = query.method;
-        var txLogic = self[methodName];
-        console.log("transaction query started");
+        var txLogic = variableFromPath(methodName);
+        this.log("transaction query started");
         return txLogic.call(this, {
           data: query.data,
           insert: insert,
@@ -4978,6 +5033,10 @@ function (modules) {
         });
       };
 
+      Transaction.prototype.log = function (message) {
+        this.util.logger.log(message);
+      };
+
       Transaction.prototype.startTx_ = function () {
         var _this = this;
 
@@ -4998,12 +5057,12 @@ function (modules) {
 
       Transaction.prototype.onReqFinished_ = function (result) {
         var finisehdRequest = this.reqQueue.shift();
-        console.log("finished request : " + finisehdRequest.name + " ");
+        this.log("finished request : " + finisehdRequest.name + " ");
 
         if (finisehdRequest) {
           if (result.error) {
             this.abortTx_("automatic abort of transaction due to error occured");
-            console.log("transaction aborted due to error occured");
+            this.log("transaction aborted due to error occured");
             this.onError(result.error);
           } else {
             this.isQueryExecuting = false;
@@ -5020,13 +5079,13 @@ function (modules) {
       Transaction.prototype.abortTx_ = function (msg) {
         this.reqQueue = [];
         this.util.abortTransaction();
-        console.log("transaction aborted. Msg : " + msg);
+        this.log("transaction aborted. Msg : " + msg);
       };
 
       Transaction.prototype.executeRequest_ = function (request) {
         this.isQueryExecuting = true;
         var requestObj;
-        console.log("executing request : " + request.name + " ");
+        this.log("executing request : " + request.name + " ");
         var onReqFinished = this.onReqFinished_.bind(this);
         var query = request.query;
 
@@ -5084,7 +5143,7 @@ function (modules) {
           push();
         }
 
-        console.log("request pushed : " + request.name + " with query value - " + JSON.stringify(request.query));
+        this.log("request pushed : " + request.name);
         return promiseObj;
       };
 
@@ -5114,30 +5173,97 @@ function (modules) {
       };
 
       return Transaction;
-    }(base_Base); // CONCATENATED MODULE: ./src/worker/query_manager.ts
+    }(base_Base); // CONCATENATED MODULE: ./src/worker/utils/db_schema.ts
+
+
+    var userDbSchema = function (db) {
+      var database = {
+        name: db.name,
+        version: db.version,
+        tables: []
+      };
+      db.tables.forEach(function (table) {
+        var tableAsObj = {
+          name: table.name,
+          columns: {}
+        };
+        table.columns.forEach(function (column) {
+          tableAsObj.columns[column.name] = column;
+        });
+        database.tables.push(tableAsObj);
+      });
+      return database;
+    }; // CONCATENATED MODULE: ./src/worker/query_manager.ts
 
 
     var query_manager_QueryManager =
     /** @class */
     function () {
       function QueryManager(fn) {
+        this.middlewares = [];
         this.onQryFinished = IS_WORKER ? function (result) {
           self.postMessage(result);
         } : fn;
       }
 
-      QueryManager.prototype.run = function (request) {
+      Object.defineProperty(QueryManager.prototype, "logger", {
+        get: function () {
+          return this.util.logger;
+        },
+        enumerable: false,
+        configurable: true
+      });
+
+      QueryManager.prototype.executeMiddleware_ = function (request) {
         var _this = this;
 
+        var lastIndex = getLength(this.middlewares) - 1;
+
+        if (lastIndex < 0) {
+          return promiseResolve();
+        }
+
+        var middlewareContext = {};
+        var db = this.db;
+        Object.defineProperty(middlewareContext, 'database', {
+          get: function () {
+            return userDbSchema(db);
+          }
+        });
+        return promise(function (res) {
+          var index = 0;
+
+          var callNextMiddleware = function () {
+            if (index <= lastIndex) {
+              var promiseResult = variableFromPath(_this.middlewares[index++])(request, middlewareContext);
+
+              if (!promiseResult || !promiseResult.then) {
+                promiseResult = Promise.resolve(promiseResult);
+              }
+
+              promiseResult.then(function () {
+                callNextMiddleware();
+              });
+            } else {
+              res();
+            }
+          };
+
+          callNextMiddleware();
+        });
+      };
+
+      QueryManager.prototype.executeQuery = function (request) {
         var queryResult;
+        var query = request.query;
 
         switch (request.name) {
           case API.OpenDb:
-            queryResult = this.openDb(request.query);
+            queryResult = this.openDb(query);
             break;
 
           case API.InitDb:
-            queryResult = this.initDb(request.query);
+            queryResult = this.initDb(query);
             break;
 
           case API.CloseDb:
@@ -5145,23 +5271,23 @@ function (modules) {
             break;
 
           case API.Insert:
-            queryResult = this.insert(request.query);
+            queryResult = new insert_Insert(query, this.util).execute(this.db);
             break;
 
           case API.Select:
-            queryResult = this.select(request.query);
+            queryResult = new select_Select(query, this.util).execute(this.db);
             break;
 
           case API.Count:
-            queryResult = this.count(request.query);
+            queryResult = new count_Count(query, this.util).execute(this.db);
             break;
 
           case API.Update:
-            queryResult = new update_Update(request.query, this.util).execute(this.db);
+            queryResult = new update_Update(query, this.util).execute(this.db);
             break;
 
           case API.Intersect:
-            queryResult = new intersect_Intersect(request.query, this.util).execute(this.db);
+            queryResult = new intersect_Intersect(query, this.util).execute(this.db);
             break;
 
           case API.DropDb:
@@ -5173,52 +5299,104 @@ function (modules) {
             break;
 
           case API.Union:
-            queryResult = new union_Union(request.query, this.util).execute(this.db);
+            queryResult = new union_Union(query, this.util).execute(this.db);
             break;
 
           case API.Remove:
-            queryResult = new remove_Remove(request.query, this.util).execute(this.db);
+            queryResult = new remove_Remove(query, this.util).execute(this.db);
             break;
 
           case API.Clear:
-            queryResult = new clear_Clear(request.query, this.util).execute(this.db);
+            queryResult = new clear_Clear(query, this.util).execute(this.db);
             break;
 
           case API.Transaction:
-            queryResult = new transaction_Transaction(request.query, this.util).execute(this.db);
+            queryResult = new transaction_Transaction(query, this.util).execute(this.db);
             break;
 
           case API.Get:
-            queryResult = meta_helper_MetaHelper.get(request.query, this.util);
+            queryResult = meta_helper_MetaHelper.get(query, this.util);
             break;
 
           case API.Set:
-            var query = request.query;
             queryResult = meta_helper_MetaHelper.set(query.key, query.value, this.util);
             break;
 
           case API.ImportScripts:
-            queryResult = promise(function (res, rej) {
-              try {
-                importScripts.apply(void 0, request.query);
-                res();
-              } catch (e) {
-                var err = new log_helper_LogHelper(ERROR_TYPE.ImportScriptsFailed, e.message);
-                rej(err);
-              }
-            });
+            queryResult = this.importScripts_(request);
             break;
+
+          case API.ChangeLogStatus:
+            this.logger.status = query;
+            queryResult = Promise.resolve();
+            break;
+
+          case API.Middleware:
+            var value = variableFromPath(query);
+
+            if (!value) {
+              return promiseReject(new log_helper_LogHelper(ERROR_TYPE.InvalidMiddleware, query));
+            }
+
+            this.middlewares.push(query);
+            return promiseResolve();
 
           default:
             console.error('The Api:-' + request.name + ' does not support.');
-            queryResult = Promise.resolve();
+            queryResult = promiseResolve();
         }
 
-        queryResult.then(function (result) {
-          _this.returnResult_({
-            result: result
+        this.logger.log("Executing query " + request.name + " in web worker");
+        return queryResult;
+      };
+
+      QueryManager.prototype.callResultMiddleware = function (middlewares, result) {
+        return promise(function (res) {
+          var index = 0;
+          var lastIndex = getLength(middlewares) - 1;
+
+          var callNextMiddleware = function () {
+            if (index <= lastIndex) {
+              var promiseResult = middlewares[index++](result);
+
+              if (!promiseResult.then) {
+                promiseResult = promiseResolve(promiseResult);
+              }
+
+              promiseResult.then(function (modifiedResult) {
+                result = modifiedResult;
+                callNextMiddleware();
+              });
+            } else {
+              res(result);
+            }
+          };
+
+          callNextMiddleware();
+        });
+      };
+
+      QueryManager.prototype.run = function (request) {
+        var _this = this;
+
+        var middlewares = [];
+
+        request.onResult = function (cb) {
+          middlewares.push(function (result) {
+            return cb(result);
+          });
+        };
+
+        this.executeMiddleware_(request).then(function () {
+          return _this.executeQuery(request).then(function (result) {
+            return _this.callResultMiddleware(middlewares, result).then(function (modifiedResult) {
+              _this.returnResult_({
+                result: modifiedResult
+              });
+            });
           });
         }).catch(function (ex) {
+          middlewares = [];
           var err = getError(ex);
 
           _this.returnResult_({
@@ -5227,7 +5405,21 @@ function (modules) {
         });
       };
 
+      QueryManager.prototype.importScripts_ = function (request) {
+        return promise(function (res, rej) {
+          try {
+            importScripts.apply(void 0, request.query);
+            res();
+          } catch (e) {
+            var err = new log_helper_LogHelper(ERROR_TYPE.ImportScriptsFailed, e.message);
+            rej(err);
+          }
+        });
+      };
+
       QueryManager.prototype.returnResult_ = function (result) {
+        this.logger.log("Query finished inside web worker");
+
         if (this.util) {
           this.util.emptyTx();
         }
@@ -5243,10 +5435,6 @@ function (modules) {
       };
 
       QueryManager.prototype.closeDb = function () {
-        if (this.util == null) {
-          return Promise.resolve();
-        }
-
         return this.util.close();
       };
 
@@ -5254,7 +5442,7 @@ function (modules) {
         var _this = this;
 
         return this.closeDb().then(function () {
-          _this.db = _this.util = null;
+          _this.db = null;
         });
       };
 
@@ -5273,8 +5461,10 @@ function (modules) {
           });
         }
 
-        return pResult.then(function () {
-          return _this.db;
+        return this.closeDb().then(function () {
+          return pResult.then(function () {
+            return _this.db;
+          });
         });
       };
 
@@ -5287,87 +5477,21 @@ function (modules) {
 
         var dbMeta = dataBase ? new db_meta_DbMeta(dataBase) : this.db;
         this.util = new idbutil_IDBUtil(dbMeta);
-
-        var upgradeDbSchema = function (result) {
-          return promise(function (res, rej) {
-            meta_helper_MetaHelper.get(meta_helper_MetaHelper.dbSchema, _this.util).then(function (savedDb) {
-              var shouldReCreateDb = false;
-              var dbVersion;
-
-              if (savedDb) {
-                dbVersion = savedDb.version;
-                savedDb.tables.forEach(function (savedTable, index) {
-                  var providedTable = dbMeta.tables[index];
-
-                  if (providedTable) {
-                    if (savedTable.version < providedTable.version) {
-                      providedTable.state = TABLE_STATE.Delete;
-                      shouldReCreateDb = true;
-
-                      if (dbVersion < providedTable.version) {
-                        dbVersion = providedTable.version;
-                      }
-                    } else {
-                      providedTable.state = null;
-                    }
-                  }
-                });
-              }
-
-              if (shouldReCreateDb) {
-                dbMeta.version = dbVersion;
-
-                _this.terminate().then(function () {
-                  _this.util = new idbutil_IDBUtil(dbMeta);
-
-                  _this.util.initDb().then(function (isCreated) {
-                    res(isCreated);
-                  }).catch(rej);
-                });
-
-                return;
-              } else if (!result) {
-                _this.db = savedDb;
-              }
-
-              res(result);
-            });
-          });
-        };
-
         return promise(function (res, rej) {
           _this.util.initDb().then(function (isCreated) {
             if (isCreated) {
-              return isCreated;
-            }
-
-            return upgradeDbSchema(isCreated);
-          }).then(function (result) {
-            if (result) {
+              _this.db = dbMeta;
               meta_helper_MetaHelper.set(meta_helper_MetaHelper.dbSchema, dbMeta, _this.util).then(function () {
-                _this.db = dbMeta;
                 res(true);
               });
             } else {
-              res(false);
+              meta_helper_MetaHelper.get(meta_helper_MetaHelper.dbSchema, _this.util).then(function (value) {
+                _this.db = value;
+                res(false);
+              });
             }
           }).catch(rej);
         });
-      };
-
-      QueryManager.prototype.insert = function (query) {
-        var insert = new insert_Insert(query, this.util);
-        return insert.execute(this.db);
-      };
-
-      QueryManager.prototype.select = function (query) {
-        var select = new select_Select(query, this.util);
-        return select.execute(this.db);
-      };
-
-      QueryManager.prototype.count = function (query) {
-        var count = new count_Count(query, this.util);
-        return count.execute(this.db);
       };
 
       return QueryManager;

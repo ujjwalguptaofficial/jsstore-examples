@@ -5,13 +5,37 @@ var jsstoreCon = new JsStore.Connection(new Worker("scripts/jsstore.worker.js"))
 window.onload = function () {
     refreshTableData();
     registerEvents();
-    initDb();
+    initDb(getDbSchema());
 };
 
-async function initDb() {
-    var isDbCreated = await jsstoreCon.initDb(getDbSchema());
+async function initDb(dbSchema) {
+    var isDbCreated = await jsstoreCon.initDb(dbSchema);
     if (isDbCreated) {
+        localStorage.setItem("db_version", dbSchema.version);
+
         console.log('db created');
+        if (dbSchema.version === 2) {
+            var datas = await jsstoreCon.select({
+                from: "Student"
+            });
+            datas.forEach(data => {
+                const gender = data.gender;
+                if (!gender) {
+                    data.gender = 0;
+                }
+                else {
+                    data.gender = gender === "male" ? 1 : 2;
+                }
+            })
+
+            await jsstoreCon.insert({
+                into: "Student",
+                values: datas,
+                upsert: true
+            })
+            refreshTableData();
+            console.log("data type updated");
+        }
     }
     else {
         console.log('db opened');
@@ -41,13 +65,25 @@ function getDbSchema() {
             city: {
                 dataType: 'string',
                 notNull: true
+            },
+        },
+        alter: {
+            // 2 is database version to target
+            2: {
+                modify: {
+                    gender: {
+                        //1 means male, 2 means female, 0 means unknown
+                        dataType: "number"
+                    }
+                },
             }
         }
     }
-
+    const dbVersion = localStorage.getItem("db_version");
     var db = {
         name: 'My-Db',
-        tables: [table]
+        tables: [table],
+        version: dbVersion ? Number(dbVersion) : null
     }
     return db;
 }
@@ -198,107 +234,10 @@ function refreshFormData(student) {
     $('#txtCity').val(student.city);
 }
 
-function getDbSchemaV2() {
-    var table = {
-        name: 'Student',
-        columns: {
-            id: {
-                primaryKey: true,
-                autoIncrement: true
-            },
-            name: {
-                notNull: true,
-                dataType: 'string'
-            },
-            gender: {
-                dataType: 'string',
-                default: 'male'
-            },
-            country: {
-                notNull: true,
-                dataType: 'string'
-            },
-            city: {
-                dataType: 'string',
-                notNull: true
-            }
-        },
-        version: 2
-    }
-
-    var db = {
-        name: 'My-Db',
-        tables: [table]
-    }
-    return db;
-}
-
-async function changeDbSchemaToV2AndRestoreUsingMemory() {
-    var allData = await jsstoreCon.select({
-        from: 'Student'
-    });
-
-    var isDbCreated = await jsstoreCon.initDb(getDbSchemaV2());
-    if (isDbCreated) {
-        await jsstoreCon.insert({
-            into: 'Student',
-            values: allData
-        })
-        alert("data successfully inserted from v1 to v2")
-    }
-}
-
-function getDbSchemaV2WithAnotherTable() {
-    var table = {
-        name: 'Student',
-        columns: {
-            id: {
-                primaryKey: true,
-                autoIncrement: true
-            },
-            name: {
-                notNull: true,
-                dataType: 'string'
-            },
-            gender: {
-                dataType: 'string',
-                default: 'male'
-            },
-            country: {
-                notNull: true,
-                dataType: 'string'
-            },
-            city: {
-                dataType: 'string',
-                notNull: true
-            }
-        }
-    };
-
-    var newTable = Object.assign({}, table);
-    newTable.name = "StudentV2";
-    newTable.version = 2
-
-    var db = {
-        name: 'My-Db',
-        tables: [table, newTable]
-    }
-    return db;
-}
-
-async function changeDbSchemaToV2AndRestoreWithAnotherTable() {
 
 
-    var isDbCreated = await jsstoreCon.initDb(getDbSchemaV2WithAnotherTable());
-    if (isDbCreated) {
-
-        var allData = await jsstoreCon.select({
-            from: 'Student'
-        });
-        await jsstoreCon.insert({
-            into: 'StudentV2',
-            values: allData
-        })
-        alert("data successfully inserted from v1 to v2")
-    }
+function changeToV2() {
+    const db = getDbSchema();
+    db.version = 2;
+    initDb(db);
 }

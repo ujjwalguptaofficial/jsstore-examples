@@ -19,7 +19,11 @@
         <div class="col-xs-12 col-sm-10 col-centered ">
             <div style="text-align:center;">
                 <button id="btnAddStudent" class="btn btn-success">
-                    <i class="fa fa-plus" aria-hidden="true"></i> Add Student</button>
+                    <i class="fa fa-plus" aria-hidden="true"></i> Add Student
+                </button>
+                <button class="btn btn-primary" onclick="changeToV2()">
+                    Change db to version 2
+                </button>
             </div>
             <table id="tblGrid" class="table table-hover ">
                 <caption
@@ -78,14 +82,6 @@
                     </div>
                 </div>
             </form>
-        </div>
-
-        <div class="col-centered">
-            <button class="btn btn-primary" onclick="changeDbSchemaToV2AndRestoreUsingMemory()">Change Schema and
-                restore
-                data using memory</button>
-            <button class="btn" onclick="changeDbSchemaToV2AndRestoreWithAnotherTable()">Change Schema and restore data
-                without memory</button>
         </div>
     </div>
 

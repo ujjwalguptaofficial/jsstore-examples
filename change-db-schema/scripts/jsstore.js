@@ -1,5 +1,5 @@
 /*!
- * @license :jsstore - V4.0.0 - 15/05/2021
+ * @license :jsstore - V4.2.1 - 14/06/2021
  * https://github.com/ujjwalguptaofficial/JsStore
  * Copyright (c) 2021 @Ujjwal Gupta; Licensed MIT
  */
@@ -274,13 +274,6 @@ function (module, __webpack_exports__, __webpack_require__) {
     );
   });
 
-  __webpack_require__.d(__webpack_exports__, "workerInjector", function () {
-    return (
-      /* reexport */
-      workerInjector
-    );
-  });
-
   __webpack_require__.d(__webpack_exports__, "DATA_TYPE", function () {
     return (
       /* reexport */
@@ -370,6 +363,7 @@ function (module, __webpack_exports__, __webpack_require__) {
     ERROR_TYPE["ImportScriptsFailed"] = "import_scripts_failed";
     ERROR_TYPE["MethodNotExist"] = "method_not_exist";
     ERROR_TYPE["Unknown"] = "unknown";
+    ERROR_TYPE["InvalidMiddleware"] = "invalid_middleware";
   })(ERROR_TYPE || (ERROR_TYPE = {}));
 
   var WORKER_STATUS;
@@ -413,6 +407,7 @@ function (module, __webpack_exports__, __webpack_require__) {
     API["Union"] = "union";
     API["Intersect"] = "intersect";
     API["ImportScripts"] = "import_scripts";
+    API["Middleware"] = "middleware";
   })(API || (API = {}));
 
   var EVENT;
@@ -478,6 +473,11 @@ function (module, __webpack_exports__, __webpack_require__) {
 
   var promise = function (cb) {
     return new Promise(cb);
+  }; // CONCATENATED MODULE: ./src/common/utils/promise_resolve.ts
+
+
+  var promiseResolve = function (value) {
+    return Promise.resolve(value);
   }; // CONCATENATED MODULE: ./src/main/connection_helper.ts
 
 
@@ -502,17 +502,25 @@ function (module, __webpack_exports__, __webpack_require__) {
         this.worker_.onmessage = this.onMessageFromWorker_.bind(this);
       } else {
         this.isRuningInWorker = false;
-        this.queryManager = new this.jsstoreWorker.QueryManager(this.processFinishedQuery_.bind(this));
+        this.initQueryManager_();
       }
     }
 
     Object.defineProperty(ConnectionHelper.prototype, "jsstoreWorker", {
       get: function () {
-        return this.$worker || JsStoreWorker;
+        return this.$worker || window['JsStoreWorker'];
       },
       enumerable: false,
       configurable: true
     });
+
+    ConnectionHelper.prototype.initQueryManager_ = function () {
+      var workerRef = this.jsstoreWorker;
+
+      if (workerRef) {
+        this.queryManager = new workerRef.QueryManager(this.processFinishedQuery_.bind(this));
+      }
+    };
 
     ConnectionHelper.prototype.onMessageFromWorker_ = function (msg) {
       this.processFinishedQuery_(msg.data);
@@ -588,9 +596,43 @@ function (module, __webpack_exports__, __webpack_require__) {
 
         var callNextMiddleware = function () {
           if (index <= lastIndex) {
-            _this.middlewares[index++](input, callNextMiddleware);
+            var promiseResult = _this.middlewares[index++](input);
+
+            if (!promiseResult || !promiseResult.then) {
+              promiseResult = promiseResolve(promiseResult);
+            }
+
+            promiseResult.then(function () {
+              callNextMiddleware();
+            });
           } else {
             res();
+          }
+        };
+
+        callNextMiddleware();
+      });
+    };
+
+    ConnectionHelper.prototype.callResultMiddleware = function (middlewares, result) {
+      return promise(function (res) {
+        var index = 0;
+        var lastIndex = middlewares.length - 1;
+
+        var callNextMiddleware = function () {
+          if (index <= lastIndex) {
+            var promiseResult = middlewares[index++](result);
+
+            if (!promiseResult.then) {
+              promiseResult = promiseResolve(promiseResult);
+            }
+
+            promiseResult.then(function (modifiedResult) {
+              result = modifiedResult;
+              callNextMiddleware();
+            });
+          } else {
+            res(result);
           }
         };
 
@@ -602,9 +644,27 @@ function (module, __webpack_exports__, __webpack_require__) {
       var _this = this;
 
       return new Promise(function (resolve, reject) {
+        var middlewares = [];
+
+        request.onResult = function (cb) {
+          middlewares.push(function (result) {
+            return cb(result);
+          });
+        };
+
         _this.executeMiddleware_(request).then(function () {
-          request.onSuccess = resolve;
-          request.onError = reject;
+          request.onSuccess = function (result) {
+            _this.callResultMiddleware(middlewares, result).then(function (modifiedResult) {
+              resolve(modifiedResult);
+            }).catch(function (err) {
+              request.onError(err);
+            });
+          };
+
+          request.onError = function (err) {
+            middlewares = [];
+            reject(err);
+          };
 
           if (_this.requestQueue_.length === 0) {
             _this.callEvent(EVENT.RequestQueueFilled, []);
@@ -1016,8 +1076,16 @@ function (module, __webpack_exports__, __webpack_require__) {
       plugin.setup(this, params);
     };
 
-    Connection.prototype.addMiddleware = function (middleware) {
+    Connection.prototype.addMiddleware = function (middleware, forWorker) {
+      if (forWorker) {
+        return this.pushApi({
+          name: API.Middleware,
+          query: middleware
+        });
+      }
+
       this.middlewares.push(middleware);
+      return Promise.resolve();
     };
     /**
      * import scripts in jsstore web worker.
@@ -1043,16 +1111,10 @@ function (module, __webpack_exports__, __webpack_require__) {
     };
 
     return Connection;
-  }(connection_helper_ConnectionHelper); // CONCATENATED MODULE: ./src/main/worker_plugin.ts
-
-
-  var workerInjector = {
-    setup: function (connection, param) {
-      connection['$worker'] = param;
-    }
-  }; // CONCATENATED MODULE: ./src/main/index.ts
+  }(connection_helper_ConnectionHelper); // CONCATENATED MODULE: ./src/main/index.ts
 
   /***/
+
 }
 /******/
 ]);
