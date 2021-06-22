@@ -7,7 +7,7 @@
     "start": "npm run dev"
   },
   "dependencies": {
-    "jquery": "^3.4.0",
+    "jquery": "^3.5.0",
     "jsstore": "^4.0.0"
   },
   "devDependencies": {
