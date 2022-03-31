@@ -1,0 +1,172 @@
+---
+name: student.mahal
+description:
+dateCreated: March 26, 2022
+---
+
+<html>
+<table>
+	<thead>
+		<tr>
+			<th>Name</th>
+			<th>Gender</th>
+			<th>Country</th>
+			<th>City</th>
+			<th></th>
+			<th></th>
+		</tr>
+	</thead>
+	<tbody>
+		<tr>
+			<td><input type="text" :model(newStudent.name) /></td>
+			<td><input type="text" :model(newStudent.gender) /></td>
+			<td><input type="text" :model(newStudent.country) /></td>
+			<td><input type="text" :model(newStudent.city) /></td>
+			<td>
+				<button @click="add">Add</button>
+			</td>
+			<td>
+				<button @click="clear">Clear</button>
+			</td>
+		</tr>
+		
+		<fragment :for(student,index in students)>
+			<tr :if(!student.isEdit)>
+				<td>
+					{{student.name}}
+				</td>
+				<td>{{student.gender}}</td>
+				<td>{{student.country}}</td>
+				<td>{{student.city}}</td>
+				<td>
+					<button @click="()=>{editStudent(index)}">Edit</button>
+				</td>
+				<td>
+					<button @click="()=>{deleteStudent(index)}">Delete</button>
+				</td>
+			</tr>
+			<tr :else>
+				<td><input type="text" :model(student.name) /></td>
+				<td><input type="text" :model(student.gender) /></td>
+				<td><input type="text" :model(student.country) /></td>
+				<td><input type="text" :model(student.city) /></td>
+				<td>
+					<button @click="update(index)">Update</button>
+				</td>
+				<td>
+					<button @click="clear">Cancel</button>
+				</td>
+			</tr>
+		</fragment>
+	</tbody>
+</table>
+</html>
+
+<script>
+import { Component, Reactive } from "mahal";
+import { StudentService } from "@/storage_service/student_service";
+
+export default class extends Component {
+    @Reactive
+    students = [];
+
+    newStudent = {
+        name: "",
+        gender: "",
+        country: "",
+        city: "",
+    };
+
+    studentIdbService = new StudentService();
+    onInit() {
+        this.loadStudentsFromDb();
+    }
+
+    async loadStudentsFromDb() {
+        try {
+            const students = await this.studentIdbService.getStudents();
+            this.students = students;
+        } catch (ex) {
+            alert(ex.message);
+            console.error(ex);
+        }
+    }
+
+    async add() {
+        // add student into indexeddb
+
+        try {
+            const students = await this.studentIdbService.addStudent(
+                this.newStudent
+            );
+            this.students.push(students[0]);
+            this.clear();
+        } catch (ex) {
+            alert(ex.message);
+            console.error(ex);
+        }
+    }
+
+    async update(index) {
+        const student = this.students[index];
+        const updateValue = {
+            name: student.name,
+            gender: student.gender,
+            country: student.country,
+            city: student.city,
+        };
+
+        try {
+            const rowsUpdated = await this.studentIdbService.updateStudentById(
+                student.id,
+                updateValue
+            );
+            if (rowsUpdated > 0) {
+                student.isEdit = false;
+                this.students[index] = student;
+            }
+        } catch (ex) {
+            alert(ex.message);
+            console.error(ex);
+        }
+    }
+
+    clear() {
+        this.newStudent = {
+            name: "",
+            gender: "",
+            country: "",
+            city: "",
+        };
+    }
+
+    editStudent(index) {
+        this.students[index] = {
+            ...this.students[index],
+            ...{
+                isEdit: true,
+            },
+        };
+    }
+
+    async deleteStudent(index) {
+        const student = this.students[index];
+        const studentId = student.id;
+        // delete student from indexeddb
+
+        try {
+            const rowsDeleted = await this.studentIdbService.removeStudent(studentId);
+            if (rowsDeleted > 0) {
+                this.students.splice(index, 1);
+                alert("Row Deleted");
+            }
+        } catch (ex) {
+            alert(ex.message);
+            console.error(ex);
+        }
+    }
+}
+</script>
+
+<style>
+</style>
