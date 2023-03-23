@@ -4,6 +4,7 @@ import workerInjector from "jsstore/dist/worker_injector";
 // This will ensure that we are using only one instance. 
 // Otherwise due to multiple instance multiple worker will be created.
 export const idbCon = new Connection();
+console.log('workerInjector',workerInjector)
 idbCon.addPlugin(workerInjector);
 
 export const dbname = 'Demo';

@@ -12,7 +12,7 @@
   "license": "",
   "private": "true",
   "dependencies": {
-    "jsstore": "^4.4.2",
+    "jsstore": "^4.5.2",
     "mahal": "^1.4.1"
   },
   "devDependencies": {
